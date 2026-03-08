@@ -239,6 +239,23 @@ public class CouponService {
 }
 ```
 
+검증 실패 응답 예시:
+
+```json
+{
+  "success": false,
+  "code": "VALIDATION_ERROR",
+  "message": "입력한 내용을 다시 확인해 주세요.",
+  "data": null,
+  "errors": [
+    {
+      "field": "email",
+      "reason": "이메일 형식이 올바르지 않습니다."
+    }
+  ]
+}
+```
+
 검증 실패 응답:
 
 ```json
