@@ -8,6 +8,7 @@ spring:
     store-type: redis
     timeout: 30m
     redis:
+      repository-type: indexed
       namespace: fromvillage:session
 
   batch:

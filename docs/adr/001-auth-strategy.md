@@ -16,6 +16,7 @@ fromVillage는 구매자, 판매자, 관리자의 역할이 분리된 커머스 
 
 - 로그인은 커스텀 JSON 로그인 API로 처리한다.
 - 인증 상태는 HttpSession으로 유지하고, Spring Session을 통해 Redis에 저장한다.
+- 세션 저장소는 indexed Redis repository를 사용해 이후 principal 기반 세션 조회와 동시 세션 제한 정책에 재사용한다.
 - 세션 식별자는 HttpOnly 쿠키로만 전달한다.
 - 세션 쿠키는 `HttpOnly=true`, `Secure=true`, `SameSite=Lax`를 기본값으로 사용한다.
 - 세션은 비활성 기준 30분 만료를 기본값으로 사용하고, 활동이 이어지면 만료 시간을 연장한다.

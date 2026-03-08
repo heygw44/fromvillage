@@ -53,7 +53,9 @@
 - 판매자 승인 시 `USER -> SELLER`만 허용되고, 이미 SELLER이거나 ADMIN인 계정은 거절되는지 검증
 - SELLER 본인 상품 목록 조회 API 권한 및 소유권 검증
 - 세션 생성 및 로그인 성공 후 세션 ID 재발급 검증
+- Redis 세션 저장소가 indexed repository로 등록되고, 세션 데이터가 `fromvillage:session` 네임스페이스에 저장되는지 검증
 - `docs/adr/001-auth-strategy.md`에 정의된 세션 쿠키 속성, 세션 만료, 동시 세션 제한, 로그인 잠금 정책 검증
+- Redis 세션 키 TTL 검증 시 indexed repository의 만료 정리 여유 시간을 고려해 30분 이상 35분 이하 범위를 허용한다.
 - Redis에 저장된 실패 횟수와 잠금 만료 시각 갱신 검증
 - 로그인 잠금 상태 요청의 `401` 및 `AUTH_LOGIN_TEMPORARILY_LOCKED` 응답 검증
 - 상태 변경 요청의 CSRF 검증과 로그인/로그아웃 후 CSRF 재조회 흐름 검증
