@@ -87,7 +87,7 @@ Context7 기준으로도 Spring Modulith는 비즈니스 도메인 기준 모듈
 ## 6. 보안 아키텍처
 
 인증은 Spring Security 기반 stateful 세션 구조를 사용한다.
-인증된 사용자 상태는 HttpSession으로 관리하고, Spring Session을 통해 Redis에 저장한다.
+인증된 사용자 상태는 HttpSession으로 관리하고, Spring Session indexed Redis repository를 통해 Redis에 저장한다.
 세션 식별자는 쿠키로만 전달하며, 응답 바디나 URL에 세션 값을 노출하지 않는다.
 로그인 성공 시 `changeSessionId()` 기반 세션 ID 재발급으로 세션 고정 공격을 방어한다.
 CSRF 보호는 활성화하며, `/api/v1/csrf` 엔드포인트를 통해 클라이언트가 토큰을 조회할 수 있게 한다.
@@ -104,6 +104,7 @@ MVP에서는 remember-me 자동 로그인 기능은 포함하지 않는다.
 - 세션 쿠키는 존재하지만 Redis에 세션이 없거나 만료된 세션 ID가 제출된 경우는 `InvalidSessionStrategy`를 통해 `AUTH_SESSION_EXPIRED`로 처리한다.
 
 세션 쿠키 속성, 세션 만료 시간, 동시 세션 제한, 로그인 잠금의 세부 수치와 운영 정책은 `docs/adr/001-auth-strategy.md`를 따른다.
+세션 저장소는 `spring.session.redis.repository-type=indexed`를 기준으로 구성해 이후 동시 세션 제한과 principal 기반 세션 조회에 재사용한다.
 
 인가 전략은 두 층으로 구성한다.
 
