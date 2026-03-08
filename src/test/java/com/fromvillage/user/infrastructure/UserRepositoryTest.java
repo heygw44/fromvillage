@@ -43,6 +43,12 @@ class UserRepositoryTest {
     }
 
     @Test
+    @DisplayName("존재하지 않는 이메일은 false를 반환한다")
+    void existsByEmailReturnsFalseWhenEmailDoesNotExist() {
+        assertThat(userRepository.existsByEmail("missing@example.com")).isFalse();
+    }
+
+    @Test
     @DisplayName("이메일은 unique 제약을 가진다")
     void emailMustBeUnique() {
         userRepository.saveAndFlush(User.createUser("duplicate@example.com", "encoded-password", "first"));

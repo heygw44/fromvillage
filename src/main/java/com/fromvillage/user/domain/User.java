@@ -1,5 +1,7 @@
 package com.fromvillage.user.domain;
 
+import com.fromvillage.common.exception.BusinessException;
+import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.common.persistence.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,29 +18,33 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-@Getter
 @Entity
 @Table(name = "users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTimeEntity {
 
+    @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Getter
+    @Column(nullable = false, unique = true, length = 320)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String password;
 
-    @Column(nullable = false)
+    @Getter
+    @Column(nullable = false, length = 50)
     private String nickname;
 
+    @Getter
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private UserRole role;
 
+    @Getter
     @Column(name = "seller_approved_at")
     private LocalDateTime sellerApprovedAt;
 
@@ -53,8 +59,22 @@ public class User extends BaseTimeEntity {
         return new User(email, password, nickname, UserRole.USER);
     }
 
+    public static User createAdmin(String email, String password, String nickname) {
+        return new User(email, password, nickname, UserRole.ADMIN);
+    }
+
     public void approveSeller(LocalDateTime approvedAt) {
+        if (this.role == UserRole.SELLER) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_SELLER);
+        }
+        if (this.role != UserRole.USER) {
+            throw new BusinessException(ErrorCode.SELLER_APPROVAL_NOT_ALLOWED);
+        }
         this.role = UserRole.SELLER;
         this.sellerApprovedAt = Objects.requireNonNull(approvedAt);
+    }
+
+    public String getPasswordHash() {
+        return password;
     }
 }
