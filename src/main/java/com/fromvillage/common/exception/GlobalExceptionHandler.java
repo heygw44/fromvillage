@@ -79,7 +79,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 continue;
             }
 
-            String field = result.getMethodParameter().getParameterName();
+            String field = resolveFieldName(result);
             for (MessageSourceResolvable resolvableError : result.getResolvableErrors()) {
                 errors.add(new ValidationErrorData(field, resolvableError.getDefaultMessage()));
             }
@@ -95,7 +95,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request
     ) {
-        return badRequest(List.of());
+        return badRequest(List.of(new ValidationErrorData(null, "요청 본문을 읽을 수 없습니다.")));
     }
 
     private ResponseEntity<Object> badRequest(List<ValidationErrorData> errors) {
@@ -117,5 +117,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private ValidationErrorData toValidationError(ConstraintViolation<?> violation) {
         String field = violation.getPropertyPath() == null ? null : violation.getPropertyPath().toString();
         return new ValidationErrorData(field, violation.getMessage());
+    }
+
+    private String resolveFieldName(ParameterValidationResult result) {
+        String parameterName = result.getMethodParameter().getParameterName();
+        return parameterName == null ? "unknownParameter" : parameterName;
     }
 }

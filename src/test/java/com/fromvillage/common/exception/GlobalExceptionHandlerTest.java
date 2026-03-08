@@ -5,10 +5,15 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fromvillage.common.response.ErrorResponse;
+import com.fromvillage.common.response.ValidationErrorData;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Path;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -20,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,6 +36,19 @@ class GlobalExceptionHandlerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final MockMvc mockMvc = createMockMvc();
+    private ListAppender<ILoggingEvent> listAppender;
+
+    @AfterEach
+    void tearDown() {
+        if (listAppender == null) {
+            return;
+        }
+
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        logger.detachAppender(listAppender);
+        listAppender.stop();
+        listAppender = null;
+    }
 
     @Test
     @DisplayName("BusinessException은 문서화된 에러 응답으로 변환된다")
@@ -50,13 +70,34 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.message").value("입력한 내용을 다시 확인해 주세요."));
+                .andExpect(jsonPath("$.message").value("입력한 내용을 다시 확인해 주세요."))
+                .andExpect(jsonPath("$.errors[0].reason").value("요청 본문을 읽을 수 없습니다."));
+    }
+
+    @Test
+    @DisplayName("ConstraintViolationException은 VALIDATION_ERROR로 변환된다")
+    void constraintViolationConvertedToValidationError() {
+        ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+        Path propertyPath = mock(Path.class);
+        when(propertyPath.toString()).thenReturn("constraint.age");
+        when(violation.getPropertyPath()).thenReturn(propertyPath);
+        when(violation.getMessage()).thenReturn("나이는 1 이상이어야 합니다.");
+
+        ResponseEntity<ErrorResponse> response = new GlobalExceptionHandler()
+                .handleConstraintViolationException(new jakarta.validation.ConstraintViolationException(java.util.Set.of(violation)));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().code()).isEqualTo("VALIDATION_ERROR");
+        assertThat(response.getBody().message()).isEqualTo("입력한 내용을 다시 확인해 주세요.");
+        assertThat(response.getBody().errors())
+                .containsExactly(new ValidationErrorData("constraint.age", "나이는 1 이상이어야 합니다."));
     }
 
     @Test
     @DisplayName("예상하지 못한 예외는 COMMON_INTERNAL_ERROR로 변환된다")
     void unexpectedExceptionConvertedToInternalError() throws Exception {
-        ListAppender<ILoggingEvent> listAppender = attachAppender();
+        attachAppender();
 
         String responseBody = mockMvc.perform(get("/test/unexpected"))
                 .andExpect(status().isInternalServerError())
@@ -98,7 +139,7 @@ class GlobalExceptionHandlerTest {
 
     private ListAppender<ILoggingEvent> attachAppender() {
         Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
-        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
         return listAppender;

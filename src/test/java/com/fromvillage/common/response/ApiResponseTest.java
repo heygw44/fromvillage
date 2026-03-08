@@ -26,6 +26,20 @@ class ApiResponseTest {
         assertThat(json).contains("\"name\":\"fromvillage\"");
     }
 
+    @Test
+    @DisplayName("data가 null이어도 성공 응답 메타데이터는 유지된다")
+    void successResponseWithNullDataSerializesCorrectly() throws Exception {
+        ApiResponse<Void> response = ApiResponse.success(null);
+
+        String json = objectMapper.writeValueAsString(response);
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.code()).isEqualTo("SUCCESS");
+        assertThat(response.message()).isEqualTo("요청이 성공했습니다.");
+        assertThat(response.data()).isNull();
+        assertThat(json).contains("\"data\":null");
+    }
+
     private record TestPayload(String name) {
     }
 }
