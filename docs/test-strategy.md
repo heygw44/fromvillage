@@ -44,6 +44,7 @@
 - 인증 API (`signup`, `login`, `logout`, `csrf`)
 - 회원가입 비밀번호 길이/조합/공백 검증 규칙
   예: 7자 실패, 8자 성공, 공백 포함 실패, 2종 조합 실패
+- 회원가입 중복 이메일의 `409 + USER_EMAIL_ALREADY_EXISTS` 응답 검증
 - URL 보안 + 메서드 보안 동시 검증
 - USER/SELLER/ADMIN 권한별 접근 제어
 - 판매자 승인 시 `USER -> SELLER`만 허용되고, 이미 SELLER이거나 ADMIN인 계정은 거절되는지 검증
