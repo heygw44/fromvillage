@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @ActiveProfiles("test")
-@org.springframework.context.annotation.Import(TestContainersConfig.class)
+@Import(TestContainersConfig.class)
 class RedisSessionIntegrationTest {
 
     private static final String SESSION_VALUE_ATTRIBUTE = "sessionValue";
@@ -55,6 +56,11 @@ class RedisSessionIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        Set<String> sessionKeys = stringRedisTemplate.keys("fromvillage:session:*");
+        if (sessionKeys != null && !sessionKeys.isEmpty()) {
+            stringRedisTemplate.delete(sessionKeys);
+        }
+
         this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .addFilters(springSessionRepositoryFilter)
                 .build();
