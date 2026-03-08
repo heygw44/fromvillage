@@ -39,6 +39,15 @@ class PasswordConstraintValidatorTest {
     }
 
     @Test
+    @DisplayName("20자를 초과한 비밀번호는 길이 메시지로 거절한다")
+    void rejectsPasswordLongerThanTwentyCharacters() {
+        Set<ConstraintViolation<PasswordHolder>> violations = validator.validate(new PasswordHolder("Aaa1!aaaaaaaaaaaaaaaa"));
+
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).isEqualTo("비밀번호는 8자 이상 20자 이하로 입력해 주세요.");
+    }
+
+    @Test
     @DisplayName("공백이 포함된 비밀번호는 공백 메시지로 거절한다")
     void rejectsPasswordContainingWhitespace() {
         Set<ConstraintViolation<PasswordHolder>> violations = validator.validate(new PasswordHolder("Password 12!"));

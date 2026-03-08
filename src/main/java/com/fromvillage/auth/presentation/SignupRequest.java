@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 public record SignupRequest(
         @NotBlank(message = "이메일이 입력되지 않았습니다.")
         @Email(message = "이메일 형식이 올바르지 않습니다.")
+        @Size(max = 320, message = "이메일은 320자 이하로 입력해 주세요.")
         String email,
 
         @NotBlank(message = "비밀번호가 입력되지 않았습니다.")

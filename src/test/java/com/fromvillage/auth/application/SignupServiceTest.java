@@ -54,7 +54,7 @@ class SignupServiceTest {
         assertThat(savedUser.getPasswordHash()).isEqualTo("encoded-password");
         assertThat(result.email()).isEqualTo("user@example.com");
         assertThat(result.nickname()).isEqualTo("fromvillage");
-        assertThat(result.role()).isEqualTo(UserRole.USER);
+        assertThat(result.role()).isEqualTo("USER");
     }
 
     @Test
@@ -75,12 +75,25 @@ class SignupServiceTest {
         given(userRepository.existsByEmail("duplicate@example.com")).willReturn(false);
         given(passwordEncoder.encode("Password12!")).willReturn("encoded-password");
         given(userRepository.saveAndFlush(any(User.class)))
-                .willThrow(new DataIntegrityViolationException("duplicate"));
+                .willThrow(new DataIntegrityViolationException("Duplicate entry for key 'users.email'"));
 
         assertThatThrownBy(() -> signupService.signup(
                 new SignupCommand("duplicate@example.com", "Password12!", "fromvillage")
         )).isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.USER_EMAIL_ALREADY_EXISTS);
+    }
+
+    @Test
+    @DisplayName("이메일 제약이 아닌 저장 예외는 그대로 다시 던진다")
+    void signupRethrowsNonEmailConstraintViolation() {
+        given(userRepository.existsByEmail("duplicate@example.com")).willReturn(false);
+        given(passwordEncoder.encode("Password12!")).willReturn("encoded-password");
+        DataIntegrityViolationException exception = new DataIntegrityViolationException("Column 'nickname' cannot be null");
+        given(userRepository.saveAndFlush(any(User.class))).willThrow(exception);
+
+        assertThatThrownBy(() -> signupService.signup(
+                new SignupCommand("duplicate@example.com", "Password12!", "fromvillage")
+        )).isSameAs(exception);
     }
 }

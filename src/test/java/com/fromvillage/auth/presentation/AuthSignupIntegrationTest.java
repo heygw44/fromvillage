@@ -63,7 +63,7 @@ class AuthSignupIntegrationTest {
                 .andExpect(jsonPath("$.data.email").value("user@example.com"))
                 .andExpect(jsonPath("$.data.nickname").value("fromvillage"))
                 .andExpect(jsonPath("$.data.role").value("USER"))
-                .andExpect(jsonPath("$.data.userId").doesNotExist())
+                .andExpect(jsonPath("$.data.id").doesNotExist())
                 .andExpect(jsonPath("$.data.password").doesNotExist());
 
         User savedUser = userRepository.findByEmail("user@example.com").orElseThrow();
@@ -158,6 +158,35 @@ class AuthSignupIntegrationTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errors[0].field").value("email"))
                 .andExpect(jsonPath("$.errors[0].reason").value("이메일 형식이 올바르지 않습니다."));
+    }
+
+    @Test
+    @DisplayName("이메일이 320자를 초과하면 400 검증 에러를 반환한다")
+    void signupRejectsTooLongEmail() throws Exception {
+        String email = "a".repeat(64)
+                + "@"
+                + "b".repeat(63)
+                + "."
+                + "c".repeat(63)
+                + "."
+                + "d".repeat(63)
+                + "."
+                + "e".repeat(63)
+                + "."
+                + "f".repeat(58);
+
+        mockMvc.perform(post("/api/v1/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", email,
+                                "password", "Password12!",
+                                "nickname", "fromvillage"
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("email"))
+                .andExpect(jsonPath("$.errors[0].reason").value("이메일은 320자 이하로 입력해 주세요."));
     }
 
     @Test
