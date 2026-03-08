@@ -57,7 +57,7 @@ class AuthSignupIntegrationTest {
                                 "password", "Password12!",
                                 "nickname", "fromvillage"
                         ))))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.email").value("user@example.com"))
@@ -175,5 +175,22 @@ class AuthSignupIntegrationTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errors[0].field").value("nickname"))
                 .andExpect(jsonPath("$.errors[0].reason").value("닉네임이 입력되지 않았습니다."));
+    }
+
+    @Test
+    @DisplayName("닉네임이 50자를 초과하면 400 검증 에러를 반환한다")
+    void signupRejectsTooLongNickname() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "user@example.com",
+                                "password", "Password12!",
+                                "nickname", "a".repeat(51)
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("nickname"))
+                .andExpect(jsonPath("$.errors[0].reason").value("닉네임은 50자 이하로 입력해 주세요."));
     }
 }

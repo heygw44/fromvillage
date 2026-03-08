@@ -4,6 +4,7 @@ import com.fromvillage.auth.application.SignupCommand;
 import com.fromvillage.auth.presentation.validation.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record SignupRequest(
         @NotBlank(message = "이메일이 입력되지 않았습니다.")
@@ -15,6 +16,7 @@ public record SignupRequest(
         String password,
 
         @NotBlank(message = "닉네임이 입력되지 않았습니다.")
+        @Size(max = 50, message = "닉네임은 50자 이하로 입력해 주세요.")
         String nickname
 ) {
 
