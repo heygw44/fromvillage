@@ -1,0 +1,79 @@
+name: "기능 요청"
+description: "새로운 기능 개발을 요청합니다."
+title: "[Feature] "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        기능 요청 이슈를 작성해주세요. 가능한 구체적으로 작성하면 개발에 큰 도움이 됩니다.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 기능 요약
+      description: 어떤 기능인지 한두 문장으로 요약해주세요.
+      placeholder: "예: 판매자가 자신의 주문 목록을 조회할 수 있는 API"
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: 배경 및 목적
+      description: 이 기능이 왜 필요한지 설명해주세요.
+      placeholder: "예: 판매자가 주문 현황을 실시간으로 확인해야 정산 준비가 가능합니다."
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: 상세 요구사항
+      description: 구현에 필요한 세부 사항을 작성해주세요.
+      placeholder: |
+        - API 엔드포인트: GET /api/v1/seller/orders
+        - 페이지네이션 지원
+        - 주문 상태별 필터링
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: 관련 모듈
+      description: 이 기능이 속하는 모듈을 선택해주세요.
+      options:
+        - auth
+        - user
+        - product
+        - cart
+        - order
+        - coupon
+        - settlement
+        - admin
+        - common
+        - 기타
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 완료 조건 (Acceptance Criteria)
+      description: 기능이 완료되었다고 판단할 수 있는 조건을 체크리스트로 작성해주세요.
+      placeholder: |
+        - [ ] API 엔드포인트 구현
+        - [ ] 통합 테스트 작성
+        - [ ] API 문서 반영
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고 자료
+      description: 관련 문서, PRD, ERD 등 참고할 자료가 있으면 링크해주세요.
+      placeholder: "예: docs/prd.md 4.3절, docs/erd.md 주문 테이블"
+    validations:
+      required: false
