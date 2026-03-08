@@ -1,10 +1,13 @@
 package com.fromvillage.common.exception;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fromvillage.common.response.ErrorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
@@ -53,6 +56,8 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("예상하지 못한 예외는 COMMON_INTERNAL_ERROR로 변환된다")
     void unexpectedExceptionConvertedToInternalError() throws Exception {
+        ListAppender<ILoggingEvent> listAppender = attachAppender();
+
         String responseBody = mockMvc.perform(get("/test/unexpected"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.success").value(false))
@@ -65,6 +70,19 @@ class GlobalExceptionHandlerTest {
         assertThat(response.message()).isEqualTo("일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
         assertThat(response.data()).isNull();
         assertThat(response.errors()).isEmpty();
+        assertThat(listAppender.list)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .contains("Unhandled exception");
+    }
+
+    @Test
+    @DisplayName("실패 응답의 data 필드는 Void 타입으로 선언된다")
+    void errorResponseDataTypeIsVoid() throws Exception {
+        assertThat(ErrorResponse.class.getRecordComponents())
+                .filteredOn(component -> component.getName().equals("data"))
+                .singleElement()
+                .extracting(component -> component.getType())
+                .isEqualTo(Void.class);
     }
 
     private MockMvc createMockMvc() {
@@ -76,6 +94,14 @@ class GlobalExceptionHandlerTest {
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .setValidator(validator)
                 .build();
+    }
+
+    private ListAppender<ILoggingEvent> attachAppender() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+        return listAppender;
     }
 
     @RestController

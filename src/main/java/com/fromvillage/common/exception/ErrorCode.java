@@ -3,7 +3,6 @@ package com.fromvillage.common.exception;
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
-    SUCCESS(HttpStatus.OK, "SUCCESS", "요청이 성공했습니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "입력한 내용을 다시 확인해 주세요."),
     AUTH_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_UNAUTHORIZED", "로그인이 필요합니다."),
     AUTH_SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH_SESSION_EXPIRED", "로그인이 만료되었습니다. 다시 로그인해 주세요."),

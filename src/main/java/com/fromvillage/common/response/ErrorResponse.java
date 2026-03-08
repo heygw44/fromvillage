@@ -8,7 +8,7 @@ public record ErrorResponse(
         boolean success,
         String code,
         String message,
-        Object data,
+        Void data,
         List<ValidationErrorData> errors
 ) {
 

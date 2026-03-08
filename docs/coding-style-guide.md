@@ -256,20 +256,6 @@ public class CouponService {
 }
 ```
 
-검증 실패 응답:
-
-```json
-{
-  "success": false,
-  "code": "VALIDATION_ERROR",
-  "message": "입력값 검증에 실패했습니다.",
-  "data": null,
-  "errors": [
-    { "field": "email", "reason": "올바른 이메일 형식이어야 합니다." }
-  ]
-}
-```
-
 ### 6.3 페이지네이션
 
 요청 파라미터:

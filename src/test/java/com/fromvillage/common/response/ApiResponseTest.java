@@ -1,7 +1,6 @@
 package com.fromvillage.common.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fromvillage.common.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -19,8 +18,8 @@ class ApiResponseTest {
         String json = objectMapper.writeValueAsString(response);
 
         assertThat(response.success()).isTrue();
-        assertThat(response.code()).isEqualTo(ErrorCode.SUCCESS.getCode());
-        assertThat(response.message()).isEqualTo(ErrorCode.SUCCESS.getMessage());
+        assertThat(response.code()).isEqualTo("SUCCESS");
+        assertThat(response.message()).isEqualTo("요청이 성공했습니다.");
         assertThat(json).contains("\"success\":true");
         assertThat(json).contains("\"code\":\"SUCCESS\"");
         assertThat(json).contains("\"message\":\"요청이 성공했습니다.\"");
