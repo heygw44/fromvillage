@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -23,6 +24,27 @@ class UserStoreJpaAdapterUnitTest {
 
     @InjectMocks
     private UserStoreJpaAdapter userStoreJpaAdapter;
+
+    @Test
+    @DisplayName("사용자 저장에 성공하면 저장된 엔티티를 그대로 반환한다")
+    void saveReturnsUserOnSuccess() {
+        User user = User.createUser("user@example.com", "encoded-password", "nickname");
+        given(userJpaRepository.saveAndFlush(user)).willReturn(user);
+
+        User savedUser = userStoreJpaAdapter.save(user);
+
+        assertThat(savedUser).isSameAs(user);
+    }
+
+    @Test
+    @DisplayName("이메일 존재 여부 조회 결과를 그대로 반환한다")
+    void existsByEmailReturnsRepositoryResult() {
+        given(userJpaRepository.existsByEmail("exists@example.com")).willReturn(true);
+        given(userJpaRepository.existsByEmail("missing@example.com")).willReturn(false);
+
+        assertThat(userStoreJpaAdapter.existsByEmail("exists@example.com")).isTrue();
+        assertThat(userStoreJpaAdapter.existsByEmail("missing@example.com")).isFalse();
+    }
 
     @Test
     @DisplayName("이메일 제약이 아닌 저장 예외는 그대로 다시 던진다")
