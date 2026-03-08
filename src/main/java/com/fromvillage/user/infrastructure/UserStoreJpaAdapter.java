@@ -5,17 +5,20 @@ import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.domain.UserStore;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
+
+import java.util.regex.Pattern;
 
 @Component
 @RequiredArgsConstructor
 public class UserStoreJpaAdapter implements UserStore {
 
-    private static final String EMAIL_COLUMN_NAME = "email";
     private static final String EMAIL_CONSTRAINT_NAME = "users.email";
-    private static final String DUPLICATE_ENTRY_TOKEN = "duplicate entry";
-    private static final String USER_TABLE_TOKEN = "users.";
+    private static final String EMAIL_UNIQUE_CONSTRAINT_NAME = "uk_users_email";
+    private static final Pattern EMAIL_KEY_PATTERN =
+            Pattern.compile("for key ['`\"]?(users\\.)?email['`\"]?");
 
     private final UserJpaRepository userJpaRepository;
 
@@ -37,6 +40,17 @@ public class UserStoreJpaAdapter implements UserStore {
     }
 
     private boolean isEmailConstraintViolation(DataIntegrityViolationException exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException constraintViolationException) {
+                String constraintName = constraintViolationException.getConstraintName();
+                if (constraintName != null && isEmailConstraintName(constraintName.toLowerCase())) {
+                    return true;
+                }
+            }
+            cause = cause.getCause();
+        }
+
         String message = exception.getMostSpecificCause() == null
                 ? exception.getMessage()
                 : exception.getMostSpecificCause().getMessage();
@@ -46,8 +60,12 @@ public class UserStoreJpaAdapter implements UserStore {
         }
 
         String normalizedMessage = message.toLowerCase();
-        return normalizedMessage.contains(EMAIL_CONSTRAINT_NAME)
-                || normalizedMessage.contains(EMAIL_COLUMN_NAME)
-                || (normalizedMessage.contains(DUPLICATE_ENTRY_TOKEN) && normalizedMessage.contains(USER_TABLE_TOKEN));
+        return isEmailConstraintName(normalizedMessage)
+                || EMAIL_KEY_PATTERN.matcher(normalizedMessage).find();
+    }
+
+    private boolean isEmailConstraintName(String value) {
+        return value.contains(EMAIL_CONSTRAINT_NAME)
+                || value.contains(EMAIL_UNIQUE_CONSTRAINT_NAME);
     }
 }

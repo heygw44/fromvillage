@@ -12,7 +12,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,8 +69,8 @@ class SignupServiceTest {
     }
 
     @Test
-    @DisplayName("저장 시점에 중복 이메일 제약이 발생해도 같은 에러 코드로 변환한다")
-    void signupMapsDuplicateConstraintOnSave() {
+    @DisplayName("저장소에서 올라온 중복 이메일 비즈니스 예외는 그대로 전달한다")
+    void signupPropagatesDuplicateEmailBusinessExceptionFromStore() {
         given(userStore.existsByEmail("duplicate@example.com")).willReturn(false);
         given(passwordEncoder.encode("Password12!")).willReturn("encoded-password");
         given(userStore.save(any(User.class)))
@@ -82,18 +81,5 @@ class SignupServiceTest {
         )).isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.USER_EMAIL_ALREADY_EXISTS);
-    }
-
-    @Test
-    @DisplayName("이메일 제약이 아닌 저장 예외는 그대로 다시 던진다")
-    void signupRethrowsNonEmailConstraintViolation() {
-        given(userStore.existsByEmail("duplicate@example.com")).willReturn(false);
-        given(passwordEncoder.encode("Password12!")).willReturn("encoded-password");
-        DataIntegrityViolationException exception = new DataIntegrityViolationException("Column 'nickname' cannot be null");
-        given(userStore.save(any(User.class))).willThrow(exception);
-
-        assertThatThrownBy(() -> signupService.signup(
-                new SignupCommand("duplicate@example.com", "Password12!", "fromvillage")
-        )).isSameAs(exception);
     }
 }

@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = @UniqueConstraint(name = "uk_users_email", columnNames = "email")
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTimeEntity {
 
@@ -29,7 +33,7 @@ public class User extends BaseTimeEntity {
     private Long id;
 
     @Getter
-    @Column(nullable = false, unique = true, length = 320)
+    @Column(nullable = false, length = 320)
     private String email;
 
     @Column(nullable = false, length = 100)
