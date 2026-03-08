@@ -1,0 +1,30 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  session:
+    store-type: redis
+    timeout: 30m
+    redis:
+      namespace: fromvillage:session
+
+  batch:
+    job:
+      enabled: false
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
+      tracking-modes: cookie
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html

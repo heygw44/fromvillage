@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "ko-KR"
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "develop"
+      - "main"
+
+  path_filters:
+    - "!docs/**"
+    - "!*.md"
+    - "!.gitignore"
+    - "!.env.example"
+    - "!gradle/wrapper/**"
+    - "!gradlew"
+    - "!gradlew.bat"
+
+  path_instructions:
+    - path: "src/main/java/**/*.java"
+      instructions: |
+        이 프로젝트는 Spring Boot 3.5 + Java 21 기반 Modular Monolith 구조입니다.
+        다음 규칙을 기준으로 리뷰해주세요:
+
+        - 레이어 의존 방향: presentation → application → domain ← infrastructure
+        - domain 레이어는 다른 레이어에 의존하지 않아야 합니다.
+        - @Transactional은 application 레이어에서만 선언합니다.
+        - 생성자 주입(@RequiredArgsConstructor)을 사용하고, 필드 주입(@Autowired)은 금지합니다.
+        - Entity는 soft delete(deleted_at) 방식을 사용하며, 하드 삭제는 금지합니다.
+        - Response DTO에 비밀번호, 세션 ID, 내부 ID를 노출하지 않습니다.
+        - System.out.println 사용을 금지하고 @Slf4j를 사용합니다.
+
+    - path: "src/main/java/**/presentation/**/*.java"
+      instructions: |
+        Controller 리뷰 시 다음을 확인해주세요:
+        - API 경로가 /api/v1/** 패턴을 따르는지
+        - Request DTO에 Bean Validation 어노테이션이 적용되어 있는지
+        - 비즈니스 로직이 Controller에 포함되어 있지 않은지
+
+    - path: "src/main/java/**/domain/**/*.java"
+      instructions: |
+        Domain 레이어 리뷰 시 다음을 확인해주세요:
+        - 외부 레이어(infrastructure, presentation)에 의존하지 않는지
+        - Spring Framework 어노테이션(@Service, @Repository 등)을 직접 사용하지 않는지 (Domain Service 제외)
+        - 비즈니스 규칙과 상태 전이 로직이 Entity/Domain Service에 위치하는지
+
+    - path: "src/main/java/**/infrastructure/**/*.java"
+      instructions: |
+        Infrastructure 레이어 리뷰 시 다음을 확인해주세요:
+        - 도메인 규칙(비즈니스 로직)이 포함되어 있지 않은지
+        - JPA Repository, Redis 연동 등 기술 구현만 포함하는지
+
+    - path: "src/test/java/**/*.java"
+      instructions: |
+        테스트 코드 리뷰 시 다음을 확인해주세요:
+        - 단위 테스트(*Test): 외부 I/O 없이 도메인 규칙을 검증하는지
+        - 통합 테스트(*IntegrationTest): @Import(TestContainersConfig.class) 사용하는지
+        - 성공 케이스와 실패 케이스를 모두 작성했는지
+        - 테스트 메서드명이 테스트 의도를 명확히 표현하는지
+
+    - path: "src/main/resources/**/*.yml"
+      instructions: |
+        YAML 설정 파일 리뷰 시 다음을 확인해주세요:
+        - 시크릿(비밀번호, 접속 정보)이 하드코딩되어 있지 않은지
+        - 환경변수 플레이스홀더(${ENV_VAR}) 또는 기본값(${ENV_VAR:default})을 사용하는지
+
+    - path: "build.gradle"
+      instructions: |
+        의존성 변경 시 다음을 확인해주세요:
+        - 불필요한 의존성이 추가되지 않았는지
+        - 보안 취약점이 알려진 버전이 아닌지
+        - runtimeOnly, testImplementation 등 스코프가 적절한지
+
+  tools:
+    gitleaks:
+      enabled: true
+    languagetool:
+      enabled: true
+      level: "default"
+
+chat:
+  auto_reply: true

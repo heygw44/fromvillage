@@ -1,0 +1,36 @@
+# Build
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+application-secret.yml
+application-prod.yml
+
+# ChatGPT
+AGENTS.md
+
+# Claude
+.claude/
+CLAUDE.md
+
+# Docker
+docker-compose.override.yml
