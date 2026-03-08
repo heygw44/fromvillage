@@ -94,6 +94,9 @@
   - `docs/api.md`
   - `docs/adr/001-auth-strategy.md`
 
+후속 정리:
+- 회원가입 저장소 포트 분리와 저장 예외 매핑 정리는 후속 이슈 `#21`로 관리한다.
+
 #### M1-04. Spring Session + Redis 세션 저장소 구현
 
 - 관련 모듈/라벨: `auth`, `security`, `feat`

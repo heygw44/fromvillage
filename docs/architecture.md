@@ -60,6 +60,12 @@ Context7 기준으로도 Spring Modulith는 비즈니스 도메인 기준 모듈
 - `infrastructure`
   JPA Repository, Redis 연동, Batch 설정, 외부 구현체
 
+저장소 협력 원칙:
+
+- `application`은 필요한 저장 연산을 `domain` 포트 인터페이스에 의존한다.
+- `infrastructure`는 Spring Data JPA 저장소와 어댑터를 통해 그 포트를 구현한다.
+- 회원가입은 `SignupService -> user.domain.UserStore -> user.infrastructure.UserStoreJpaAdapter -> UserJpaRepository` 흐름으로 연결한다.
+
 핵심 원칙은 다음과 같다.
 
 - Controller는 요청 검증과 응답 변환에 집중한다.
@@ -73,6 +79,7 @@ Context7 기준으로도 Spring Modulith는 비즈니스 도메인 기준 모듈
 
 - `presentation -> application -> domain`
 - `infrastructure -> domain/application`
+- `application -> infrastructure` 직접 의존은 허용하지 않는다.
 
 모듈 간 협력은 MVP 기준으로 직접 서비스 호출 중심으로 설계한다.
 이벤트 기반 통신은 전면 도입하지 않고, 이후 확장 포인트로만 제한한다.
@@ -139,6 +146,8 @@ MVP에서는 remember-me 자동 로그인 기능은 포함하지 않는다.
   `checkout_order`와 하위 `seller_order` 상태 변경, 재고 복구, 재고 복구 시 `ON_SALE` 전환, 쿠폰 복구
 - 판매자 권한 부여
   사용자 역할 변경
+- 회원가입
+  이메일 중복 선행 조회, 비밀번호 해시 저장, 사용자 저장
 - 로그인
   사용자 인증, 세션 생성, 세션 ID 재발급
 - 로그인 실패 제어
@@ -221,6 +230,11 @@ API 응답은 전역 공통 계약으로 통일한다.
   에러 코드, 메시지, 검증 오류 정보 등을 공통 구조로 제공한다.
 - 예외 처리
   `GlobalExceptionHandler`에서 전역 변환한다.
+
+저장소 예외 매핑 원칙:
+
+- 이메일 중복처럼 도메인 의미가 확정된 저장 예외는 저장소 어댑터에서 `BusinessException`으로 변환한다.
+- 나머지 저장 예외는 오분류를 피하기 위해 인프라 예외를 유지한다.
 
 핵심은 인증, 인가, 검증, 비즈니스 예외, 시스템 예외를 일관된 형식으로 노출하는 것이다.
 
