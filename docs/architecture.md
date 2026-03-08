@@ -112,7 +112,9 @@ MVP에서는 remember-me 자동 로그인 기능은 포함하지 않는다.
 - ADMIN은 운영 목적의 전체 조회와 관리가 가능하다.
 - ADMIN은 운영 전용 계정으로 간주하며 일반 구매와 판매 유스케이스에는 참여하지 않는다.
 - MVP에서는 하나의 계정이 동시에 USER와 SELLER를 가지지 않으며, 판매자 승인은 역할 전환으로 처리한다.
+- 판매자 승인은 `USER -> SELLER` 단방향 전환으로만 다루며, 이미 SELLER인 계정 재승인이나 ADMIN 계정 전환은 허용하지 않는다.
 - ADMIN 계정은 공개 회원가입이 아니라 초기 시드 또는 운영 초기화 절차로만 생성한다.
+- 회원 계정의 탈퇴/비활성화는 상품 soft delete와 별도 lifecycle 정책으로 다루며, 현재 MVP 범위의 `users` 테이블에는 `deleted_at`을 두지 않는다.
 - 상품 이미지 URL은 `https`만 허용하고, 서버는 외부 `imageUrl`을 직접 fetch하지 않는다.
 - 상품 삭제는 hard delete가 아니라 soft delete로 처리해 과거 주문 이력의 참조 무결성을 유지한다.
 - soft delete된 상품은 공개 목록/상세 API에서 숨기고, 공개 상세 조회 요청에는 `404 Not Found`를 반환한다.

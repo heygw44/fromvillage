@@ -310,7 +310,8 @@ public class CouponService {
 
 - **PK**: `id` (bigint, auto-increment)
 - **필수 컬럼**: `created_at`, `updated_at`
-- **Soft Delete**: `deleted_at` (nullable) 사용, 하드 삭제 금지
+- **Soft Delete**: 기본값은 `deleted_at` (nullable) 사용, 하드 삭제 금지
+- 계정 lifecycle이 별도로 필요한 `User`는 soft delete를 기본 적용하지 않고, 탈퇴/비활성화 정책을 별도 문서와 이슈에서 정의한다.
 - 주문 시 상품 스냅샷 저장 (`order_item`에 `product_name_snapshot`, `product_price_snapshot` 복제)
 
 ### 7.2 DTO 규칙
