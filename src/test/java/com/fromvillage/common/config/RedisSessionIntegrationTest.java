@@ -98,6 +98,14 @@ class RedisSessionIntegrationTest {
         assertThat(ttlSeconds).isLessThanOrEqualTo(35 * 60);
     }
 
+    @Test
+    @DisplayName("세션 값이 없으면 missing을 반환한다")
+    void sessionAttributeNotSetReturnsMissing() throws Exception {
+        mockMvc.perform(get("/test/session/value"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("missing"));
+    }
+
     @TestConfiguration(proxyBeanMethods = false)
     static class SessionTestControllerConfig {
 
