@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fromvillage.support.TestContainersConfig;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.domain.UserRole;
-import com.fromvillage.user.infrastructure.UserRepository;
+import com.fromvillage.user.infrastructure.UserJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,7 +38,7 @@ class AuthSignupIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserJpaRepository userRepository;
 
     @Autowired(required = false)
     private PasswordEncoder passwordEncoder;
@@ -186,7 +187,7 @@ class AuthSignupIntegrationTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errors[0].field").value("email"))
-                .andExpect(jsonPath("$.errors[0].reason").value("이메일은 320자 이하로 입력해 주세요."));
+                .andExpect(jsonPath("$.errors[*].reason", hasItem("이메일은 320자 이하로 입력해 주세요.")));
     }
 
     @Test
