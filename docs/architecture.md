@@ -89,6 +89,7 @@ Context7 기준으로도 Spring Modulith는 비즈니스 도메인 기준 모듈
 인증은 Spring Security 기반 stateful 세션 구조를 사용한다.
 인증된 사용자 상태는 HttpSession으로 관리하고, Spring Session indexed Redis repository를 통해 Redis에 저장한다.
 세션 식별자는 쿠키로만 전달하며, 응답 바디나 URL에 세션 값을 노출하지 않는다.
+로그인은 JSON 요청 본문을 처리하는 커스텀 인증 필터를 통해 수행하며, form login 리다이렉트는 사용하지 않는다.
 로그인 성공 시 `changeSessionId()` 기반 세션 ID 재발급으로 세션 고정 공격을 방어한다.
 CSRF 보호는 활성화하며, `/api/v1/csrf` 엔드포인트를 통해 클라이언트가 토큰을 조회할 수 있게 한다.
 로그인 성공과 로그아웃 성공 이후에는 새로운 CSRF 토큰을 다시 발급받아야 한다.

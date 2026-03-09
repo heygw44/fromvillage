@@ -9,6 +9,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Component
@@ -25,6 +26,11 @@ public class UserStoreJpaAdapter implements UserStore {
     @Override
     public boolean existsByEmail(String email) {
         return userJpaRepository.existsByEmail(email);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return userJpaRepository.findByEmail(email);
     }
 
     @Override

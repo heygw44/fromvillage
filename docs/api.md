@@ -178,6 +178,7 @@
 - 로그인 성공 시 서버는 세션 쿠키를 설정한다.
 - 로그인 성공 시 세션 ID는 재발급된다.
 - 로그인 잠금 동작과 상세 수치는 `docs/adr/001-auth-strategy.md`를 따른다.
+- 이메일 또는 비밀번호가 올바르지 않으면 `401 Unauthorized`와 `AUTH_UNAUTHORIZED`로 응답한다.
 
 응답 데이터 예시:
 
@@ -186,6 +187,18 @@
   "email": "user@example.com",
   "nickname": "fromvillage",
   "role": "USER"
+}
+```
+
+로그인 실패 예시:
+
+```json
+{
+  "success": false,
+  "code": "AUTH_UNAUTHORIZED",
+  "message": "이메일 또는 비밀번호가 올바르지 않습니다.",
+  "data": null,
+  "errors": []
 }
 ```
 
@@ -199,6 +212,16 @@
 - 브라우저 클라이언트는 애플리케이션 초기 진입 시 CSRF 토큰을 먼저 조회한다.
 - 로그인 성공과 로그아웃 성공 이후에는 새 CSRF 토큰을 다시 조회해야 한다.
 
+응답 데이터 예시:
+
+```json
+{
+  "headerName": "X-CSRF-TOKEN",
+  "parameterName": "_csrf",
+  "token": "csrf-token-value"
+}
+```
+
 ### 5.4 로그아웃
 
 - `POST /api/v1/auth/logout`
@@ -209,6 +232,17 @@
 설명:
 
 - 로그아웃 시 현재 세션이 서버에서 무효화된다.
+
+응답 데이터 예시:
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": null
+}
+```
 
 ## 6. 상품 API
 
@@ -543,7 +577,7 @@
 
 ## 12. 문서화 기준
 
-- OpenAPI 문서 기준 경로는 `/v3/api-docs`
+- OpenAPI 문서 기준 경로는 `/api-docs`
 - Swagger UI 경로는 `/swagger-ui.html`
 - 일반 API와 관리자 API는 springdoc 그룹 분리 가능성을 고려한다.
 - 세션 쿠키 인증과 CSRF 헤더 요구사항을 OpenAPI에 명시한다.
