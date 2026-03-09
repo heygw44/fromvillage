@@ -57,6 +57,9 @@
 - `docs/adr/001-auth-strategy.md`에 정의된 세션 쿠키 속성, 세션 만료, 동시 세션 제한, 로그인 잠금 정책 검증
 - Redis 세션 키 TTL 검증 시 indexed repository의 만료 정리 여유 시간을 고려해 30분 이상 35분 이하 범위를 허용한다.
 - Redis에 저장된 실패 횟수와 잠금 만료 시각 갱신 검증
+- 자격 증명 실패 5회째 요청이 즉시 `AUTH_LOGIN_TEMPORARILY_LOCKED`로 전이되는지 검증
+- 잠금 만료 후 첫 실패는 새 카운트로 시작하고, 올바른 비밀번호로 다시 로그인할 수 있는지 검증
+- 로그인 요청 본문 형식 오류, 필수값 누락, CSRF 실패가 실패 횟수에 누적되지 않는지 검증
 - 로그인 잠금 상태 요청의 `401` 및 `AUTH_LOGIN_TEMPORARILY_LOCKED` 응답 검증
 - 상태 변경 요청의 CSRF 검증과 로그인/로그아웃 후 CSRF 재조회 흐름 검증
 - 미인증 요청의 `401 + AUTH_UNAUTHORIZED`, 세션 만료 요청의 `401 + AUTH_SESSION_EXPIRED`, CSRF 실패의 `403 + AUTH_CSRF_INVALID`, 권한 부족 요청의 `403 + AUTH_FORBIDDEN` 응답 검증

@@ -1,6 +1,7 @@
 package com.fromvillage.common.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fromvillage.auth.application.LoginFailurePolicyService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
@@ -17,15 +18,22 @@ import java.io.IOException;
 
 public class JsonLoginAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
+    public static final String LOGIN_EMAIL_ATTRIBUTE = JsonLoginAuthenticationFilter.class.getName() + ".loginEmail";
     public static final String INVALID_LOGIN_REQUEST_MESSAGE = "로그인 요청이 올바르지 않습니다.";
     public static final String EMPTY_LOGIN_REQUEST_MESSAGE = "로그인 요청 본문이 비어있습니다.";
 
     private final ObjectMapper objectMapper;
     private final Validator validator;
+    private final LoginFailurePolicyService loginFailurePolicyService;
 
-    public JsonLoginAuthenticationFilter(ObjectMapper objectMapper, Validator validator) {
+    public JsonLoginAuthenticationFilter(
+            ObjectMapper objectMapper,
+            Validator validator,
+            LoginFailurePolicyService loginFailurePolicyService
+    ) {
         this.objectMapper = objectMapper;
         this.validator = validator;
+        this.loginFailurePolicyService = loginFailurePolicyService;
         setFilterProcessesUrl("/api/v1/auth/login");
     }
 
@@ -42,6 +50,11 @@ public class JsonLoginAuthenticationFilter extends UsernamePasswordAuthenticatio
 
         LoginRequestPayload loginRequest = readLoginRequest(request);
         validate(loginRequest);
+        request.setAttribute(LOGIN_EMAIL_ATTRIBUTE, loginRequest.email());
+
+        if (loginFailurePolicyService.isLocked(loginRequest.email())) {
+            throw new LoginTemporarilyLockedAuthenticationException();
+        }
 
         UsernamePasswordAuthenticationToken authRequest =
                 UsernamePasswordAuthenticationToken.unauthenticated(loginRequest.email(), loginRequest.password());

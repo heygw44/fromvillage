@@ -1,5 +1,6 @@
 package com.fromvillage.common.security;
 
+import com.fromvillage.auth.application.LoginFailurePolicyService;
 import com.fromvillage.common.exception.ErrorCode;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JsonLoginSuccessHandler implements AuthenticationSuccessHandler {
 
+    private final LoginFailurePolicyService loginFailurePolicyService;
     private final SecurityResponseWriter responseWriter;
 
     @Override
@@ -32,6 +34,7 @@ public class JsonLoginSuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
+        loginFailurePolicyService.clear(user.getUsername());
         responseWriter.writeSuccess(response, LoginSuccessResponse.from(user));
     }
 }

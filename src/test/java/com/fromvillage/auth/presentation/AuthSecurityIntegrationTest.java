@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -30,6 +31,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 import java.util.Set;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -48,6 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthSecurityIntegrationTest {
 
     private static final String SESSION_NAMESPACE = "fromvillage:session:*";
+    private static final String LOGIN_FAILURE_NAMESPACE = "fromvillage:auth:login-failure:*";
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,13 +70,22 @@ class AuthSecurityIntegrationTest {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private MutableClock clock;
+
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        clock.reset(Instant.parse("2026-03-09T00:00:00Z"));
 
         Set<String> keys = stringRedisTemplate.keys(SESSION_NAMESPACE);
         if (keys != null && !keys.isEmpty()) {
             stringRedisTemplate.delete(keys);
+        }
+
+        Set<String> loginFailureKeys = stringRedisTemplate.keys(LOGIN_FAILURE_NAMESPACE);
+        if (loginFailureKeys != null && !loginFailureKeys.isEmpty()) {
+            stringRedisTemplate.delete(loginFailureKeys);
         }
     }
 
@@ -217,6 +232,117 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("잘못된 비밀번호가 5회 연속 누적되면 5번째 요청부터 AUTH_LOGIN_TEMPORARILY_LOCKED를 반환한다")
+    void loginLocksImmediatelyOnFifthFailure() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        for (int attempt = 1; attempt <= 4; attempt++) {
+            expectInvalidCredentials("user@example.com", "WrongPassword12!", "AUTH_UNAUTHORIZED");
+        }
+
+        expectInvalidCredentials("user@example.com", "WrongPassword12!", "AUTH_LOGIN_TEMPORARILY_LOCKED");
+    }
+
+    @Test
+    @DisplayName("잠금된 계정은 올바른 비밀번호로도 AUTH_LOGIN_TEMPORARILY_LOCKED를 반환한다")
+    void lockedAccountRejectsCorrectPasswordUntilLockExpires() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            String expectedCode = attempt < 5 ? "AUTH_UNAUTHORIZED" : "AUTH_LOGIN_TEMPORARILY_LOCKED";
+            expectInvalidCredentials("user@example.com", "WrongPassword12!", expectedCode);
+        }
+
+        CsrfSession csrfSession = fetchCsrfSession();
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "user@example.com",
+                                "password", "Password12!"
+                        ))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_LOGIN_TEMPORARILY_LOCKED"));
+    }
+
+    @Test
+    @DisplayName("잠금 시간이 지나면 올바른 비밀번호로 다시 로그인할 수 있다")
+    void loginSucceedsAfterLockExpires() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            String expectedCode = attempt < 5 ? "AUTH_UNAUTHORIZED" : "AUTH_LOGIN_TEMPORARILY_LOCKED";
+            expectInvalidCredentials("user@example.com", "WrongPassword12!", expectedCode);
+        }
+
+        clock.advance(Duration.ofMinutes(10).plusSeconds(1));
+
+        var sessionCookie = login("user@example.com", "Password12!");
+
+        mockMvc.perform(get("/test/security/protected").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("ok"));
+    }
+
+    @Test
+    @DisplayName("로그인 성공 시 이전 실패 횟수와 잠금 상태를 초기화한다")
+    void successfulLoginClearsFailureState() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        for (int attempt = 1; attempt <= 4; attempt++) {
+            expectInvalidCredentials("user@example.com", "WrongPassword12!", "AUTH_UNAUTHORIZED");
+        }
+
+        login("user@example.com", "Password12!");
+        expectInvalidCredentials("user@example.com", "WrongPassword12!", "AUTH_UNAUTHORIZED");
+    }
+
+    @Test
+    @DisplayName("형식이 잘못된 로그인 요청은 실패 횟수에 포함하지 않는다")
+    void invalidLoginPayloadDoesNotIncreaseFailureCounter() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        for (int attempt = 1; attempt <= 4; attempt++) {
+            CsrfSession csrfSession = fetchCsrfSession();
+
+            mockMvc.perform(post("/api/v1/auth/login")
+                            .cookie(csrfSession.sessionCookie())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header(csrfSession.headerName(), csrfSession.token())
+                            .content(objectMapper.writeValueAsString(Map.of(
+                                    "email", "",
+                                    "password", ""
+                            ))))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"));
+        }
+
+        expectInvalidCredentials("user@example.com", "WrongPassword12!", "AUTH_UNAUTHORIZED");
+    }
+
+    @Test
     @DisplayName("로그인 요청의 이메일이나 비밀번호가 비어 있으면 AUTH_UNAUTHORIZED를 반환한다")
     void loginRejectsBlankCredentials() throws Exception {
         CsrfSession csrfSession = fetchCsrfSession();
@@ -359,6 +485,21 @@ class AuthSecurityIntegrationTest {
         return sessionCookie;
     }
 
+    private void expectInvalidCredentials(String email, String password, String expectedCode) throws Exception {
+        CsrfSession csrfSession = fetchCsrfSession();
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", email,
+                                "password", password
+                        ))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(expectedCode));
+    }
+
     private CsrfSession fetchCsrfSession() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v1/csrf"))
                 .andExpect(status().isOk())
@@ -412,6 +553,12 @@ class AuthSecurityIntegrationTest {
         SecurityProbeController securityProbeController(SecurityProbeService securityProbeService) {
             return new SecurityProbeController(securityProbeService);
         }
+
+        @Bean
+        @Primary
+        MutableClock mutableClock() {
+            return new MutableClock(Instant.parse("2026-03-09T00:00:00Z"), ZoneId.of("UTC"));
+        }
     }
 
     @RestController
@@ -445,6 +592,40 @@ class AuthSecurityIntegrationTest {
         @PreAuthorize("hasRole('ADMIN')")
         String adminOnly() {
             return "admin";
+        }
+    }
+
+    static final class MutableClock extends Clock {
+
+        private Instant currentInstant;
+        private final ZoneId zoneId;
+
+        MutableClock(Instant currentInstant, ZoneId zoneId) {
+            this.currentInstant = currentInstant;
+            this.zoneId = zoneId;
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return zoneId;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return new MutableClock(currentInstant, zone);
+        }
+
+        @Override
+        public Instant instant() {
+            return currentInstant;
+        }
+
+        void advance(Duration duration) {
+            currentInstant = currentInstant.plus(duration);
+        }
+
+        void reset(Instant instant) {
+            currentInstant = instant;
         }
     }
 }
