@@ -10,8 +10,13 @@ import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
+import java.util.Locale;
+import java.util.Set;
+
 @Configuration(proxyBeanMethods = false)
 public class SessionConfig {
+
+    private static final Set<String> ALLOWED_SAME_SITE_VALUES = Set.of("Lax", "Strict", "None");
 
     @Bean
     CookieSerializer cookieSerializer(
@@ -23,12 +28,27 @@ public class SessionConfig {
         serializer.setCookieName("SESSION");
         serializer.setUseHttpOnlyCookie(httpOnly);
         serializer.setUseSecureCookie(secure);
-        serializer.setSameSite(sameSite);
+        serializer.setSameSite(normalizeSameSite(sameSite));
         return serializer;
     }
 
     @Bean
     SessionRegistry sessionRegistry(FindByIndexNameSessionRepository<? extends Session> sessionRepository) {
         return new SpringSessionBackedSessionRegistry<>(sessionRepository);
+    }
+
+    private String normalizeSameSite(String sameSite) {
+        if (sameSite == null || sameSite.isBlank()) {
+            return "Lax";
+        }
+
+        String normalized = sameSite.trim().toLowerCase(Locale.ROOT);
+        String candidate = normalized.substring(0, 1).toUpperCase(Locale.ROOT) + normalized.substring(1);
+
+        if (!ALLOWED_SAME_SITE_VALUES.contains(candidate)) {
+            throw new IllegalArgumentException("server.servlet.session.cookie.same-site must be one of Lax, Strict, None: " + sameSite);
+        }
+
+        return candidate;
     }
 }
