@@ -50,6 +50,7 @@
 - 회원가입 저장소 포트/어댑터 분리 후에도 API 계약이 유지되는지 검증
 - URL 보안 + 메서드 보안 동시 검증
 - USER/SELLER/ADMIN 권한별 접근 제어
+- M1 인증/인가 회귀는 실제 비즈니스 API 대신 auth/security 통합 테스트의 보호 probe 엔드포인트로 역할 매트릭스를 잠근다.
 - 판매자 승인 시 `USER -> SELLER`만 허용되고, 이미 SELLER이거나 ADMIN인 계정은 거절되는지 검증
 - SELLER 본인 상품 목록 조회 API 권한 및 소유권 검증
 - 세션 생성 및 로그인 성공 후 세션 ID 재발급 검증
@@ -63,6 +64,8 @@
 - 로그인 요청 본문 형식 오류, 필수값 누락, CSRF 실패가 실패 횟수에 누적되지 않는지 검증
 - 로그인 잠금 상태 요청의 `401` 및 `AUTH_LOGIN_TEMPORARILY_LOCKED` 응답 검증
 - 상태 변경 요청의 CSRF 검증과 로그인/로그아웃 후 CSRF 재조회 흐름 검증
+- 로그인으로 세션이 바뀐 뒤 이전 CSRF 토큰이 거절되고, 새 세션 기준으로 다시 조회한 토큰만 허용되는지 검증
+- ADMIN과 SELLER 권한은 명시적으로 분리되며, 역할 상속 없이 각각 허용/거부되는지 검증
 - 미인증 요청의 `401 + AUTH_UNAUTHORIZED`, 세션 만료 요청의 `401 + AUTH_SESSION_EXPIRED`, CSRF 실패의 `403 + AUTH_CSRF_INVALID`, 권한 부족 요청의 `403 + AUTH_FORBIDDEN` 응답 검증
 - 세션 쿠키가 없는 요청과 만료된 세션 쿠키 요청을 분리해 각각 `AUTH_UNAUTHORIZED`, `AUTH_SESSION_EXPIRED`로 응답하는지 검증
 - 장바구니 체크아웃/바로구매 공통 유스케이스 검증
