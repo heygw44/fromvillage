@@ -8,6 +8,7 @@ import com.fromvillage.common.security.JsonLoginAuthenticationFilter;
 import com.fromvillage.common.security.JsonLoginFailureHandler;
 import com.fromvillage.common.security.JsonLoginSuccessHandler;
 import com.fromvillage.common.security.JsonLogoutSuccessHandler;
+import com.fromvillage.common.security.JsonSessionInformationExpiredStrategy;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Validator;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,14 +27,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+
+import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    private static final int MAXIMUM_SESSIONS = 1;
 
     private final JsonAuthenticationEntryPoint authenticationEntryPoint;
     private final JsonAccessDeniedHandler accessDeniedHandler;
@@ -40,6 +49,7 @@ public class SecurityConfig {
     private final JsonLoginSuccessHandler loginSuccessHandler;
     private final JsonLoginFailureHandler loginFailureHandler;
     private final JsonLogoutSuccessHandler logoutSuccessHandler;
+    private final JsonSessionInformationExpiredStrategy sessionInformationExpiredStrategy;
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
@@ -49,7 +59,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JsonLoginAuthenticationFilter jsonLoginAuthenticationFilter,
-            SecurityContextRepository securityContextRepository
+            SecurityContextRepository securityContextRepository,
+            SessionRegistry sessionRegistry
     ) throws Exception {
         http
                 .csrf(Customizer.withDefaults())
@@ -68,6 +79,10 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session
                         .invalidSessionStrategy(invalidSessionStrategy)
+                        .maximumSessions(MAXIMUM_SESSIONS)
+                        .maxSessionsPreventsLogin(false)
+                        .expiredSessionStrategy(sessionInformationExpiredStrategy)
+                        .sessionRegistry(sessionRegistry)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
@@ -112,7 +127,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    SessionAuthenticationStrategy sessionAuthenticationStrategy() {
-        return new ChangeSessionIdAuthenticationStrategy();
+    SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
+        ConcurrentSessionControlAuthenticationStrategy concurrentSessionControl =
+                new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
+        concurrentSessionControl.setMaximumSessions(MAXIMUM_SESSIONS);
+        concurrentSessionControl.setExceptionIfMaximumExceeded(false);
+
+        return new CompositeSessionAuthenticationStrategy(List.of(
+                concurrentSessionControl,
+                new ChangeSessionIdAuthenticationStrategy(),
+                new RegisterSessionAuthenticationStrategy(sessionRegistry)
+        ));
     }
 }
