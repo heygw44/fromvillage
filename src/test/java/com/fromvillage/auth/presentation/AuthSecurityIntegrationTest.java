@@ -148,6 +148,24 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("로그인 요청의 이메일이나 비밀번호가 비어 있으면 AUTH_UNAUTHORIZED를 반환한다")
+    void loginRejectsBlankCredentials() throws Exception {
+        CsrfSession csrfSession = fetchCsrfSession();
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "",
+                                "password", ""
+                        ))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("이메일과 비밀번호는 필수입니다."));
+    }
+
+    @Test
     @DisplayName("세션 쿠키 없이 보호 경로에 접근하면 AUTH_UNAUTHORIZED를 반환한다")
     void protectedEndpointWithoutSessionReturnsUnauthorized() throws Exception {
         mockMvc.perform(get("/test/security/protected"))

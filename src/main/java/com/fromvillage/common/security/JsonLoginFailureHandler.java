@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,11 @@ public class JsonLoginFailureHandler implements AuthenticationFailureHandler {
             HttpServletResponse response,
             AuthenticationException exception
     ) throws IOException, ServletException {
+        if (exception instanceof AuthenticationServiceException) {
+            responseWriter.writeError(response, ErrorCode.AUTH_UNAUTHORIZED, exception.getMessage());
+            return;
+        }
+
         responseWriter.writeError(response, ErrorCode.AUTH_UNAUTHORIZED, INVALID_CREDENTIALS_MESSAGE);
     }
 }

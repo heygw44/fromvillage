@@ -236,7 +236,12 @@
 응답 데이터 예시:
 
 ```json
-null
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": null
+}
 ```
 
 ## 6. 상품 API

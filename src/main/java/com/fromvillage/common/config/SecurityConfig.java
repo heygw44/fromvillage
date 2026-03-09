@@ -9,6 +9,7 @@ import com.fromvillage.common.security.JsonLoginFailureHandler;
 import com.fromvillage.common.security.JsonLoginSuccessHandler;
 import com.fromvillage.common.security.JsonLogoutSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Validator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -42,6 +43,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
+    private final Validator validator;
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -100,7 +102,7 @@ public class SecurityConfig {
             SecurityContextRepository securityContextRepository,
             SessionAuthenticationStrategy sessionAuthenticationStrategy
     ) {
-        JsonLoginAuthenticationFilter filter = new JsonLoginAuthenticationFilter(objectMapper);
+        JsonLoginAuthenticationFilter filter = new JsonLoginAuthenticationFilter(objectMapper, validator);
         filter.setAuthenticationManager(authenticationManager);
         filter.setAuthenticationSuccessHandler(loginSuccessHandler);
         filter.setAuthenticationFailureHandler(loginFailureHandler);

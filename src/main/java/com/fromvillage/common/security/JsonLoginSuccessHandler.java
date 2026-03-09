@@ -1,6 +1,4 @@
 package com.fromvillage.common.security;
-
-import com.fromvillage.auth.presentation.LoginResponse;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +22,6 @@ public class JsonLoginSuccessHandler implements AuthenticationSuccessHandler {
             Authentication authentication
     ) throws IOException, ServletException {
         AuthenticatedUser user = (AuthenticatedUser) authentication.getPrincipal();
-        responseWriter.writeSuccess(response, LoginResponse.from(user));
+        responseWriter.writeSuccess(response, LoginSuccessResponse.from(user));
     }
 }

@@ -54,21 +54,25 @@ public class AuthenticatedUser implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
+        // MVP currently has no account expiration lifecycle in the User aggregate.
         return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
+        // Login lock is introduced in a later milestone, so principal-level lock state is not modeled yet.
         return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
+        // Password expiration is outside the current MVP scope.
         return true;
     }
 
     @Override
     public boolean isEnabled() {
+        // User deactivation/withdrawal is not implemented in the current MVP, so all persisted users are enabled.
         return true;
     }
 }
