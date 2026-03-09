@@ -1,5 +1,7 @@
 DELIMITER $$
 
+DROP PROCEDURE IF EXISTS normalize_users_email_unique_constraint$$
+
 CREATE PROCEDURE normalize_users_email_unique_constraint()
 BEGIN
     DECLARE existing_email_unique_index_name VARCHAR(64);

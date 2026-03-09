@@ -108,6 +108,7 @@ class UsersEmailUniqueConstraintMigrationIntegrationTest {
         Flyway flyway = Flyway.configure()
                 .dataSource(jdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
                 .locations("classpath:db/migration")
+                .target("1")
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .load();
