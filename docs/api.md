@@ -52,6 +52,7 @@
 - 로그인 잠금 상태의 로그인 요청은 `401 Unauthorized`와 `AUTH_LOGIN_TEMPORARILY_LOCKED` 에러 코드로 응답
 - 세션 쿠키가 없는 보호 자원 요청은 `AUTH_UNAUTHORIZED`로 처리한다.
 - 세션 쿠키는 존재하지만 Redis에 세션이 없거나 만료된 세션 ID가 제출된 경우는 `AUTH_SESSION_EXPIRED`로 처리한다.
+- 동시 로그인 제한으로 기존 세션이 만료된 경우도 `AUTH_SESSION_EXPIRED`로 처리한다.
 
 ### 3.3 검증 실패 응답
 

@@ -124,6 +124,75 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("로그인에 성공하면 기존 익명 세션과 다른 세션 ID가 발급된다")
+    void loginChangesSessionIdAfterAuthentication() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        CsrfSession csrfSession = fetchCsrfSession();
+
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "user@example.com",
+                                "password", "Password12!"
+                        ))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var loginSessionCookie = result.getResponse().getCookie("SESSION");
+
+        assertThat(loginSessionCookie).isNotNull();
+        assertThat(loginSessionCookie.getValue()).isNotEqualTo(csrfSession.sessionCookie().getValue());
+        assertThat(loginSessionCookie.isHttpOnly()).isTrue();
+        assertThat(loginSessionCookie.getSecure()).isTrue();
+        assertThat(result.getResponse().getHeaders("Set-Cookie"))
+                .anySatisfy(cookieHeader -> assertThat(cookieHeader).contains("SameSite=Lax"));
+    }
+
+    @Test
+    @DisplayName("같은 계정으로 새 로그인하면 기존 세션은 만료된다")
+    void secondLoginExpiresPreviousSession() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        var firstSession = login("user@example.com", "Password12!");
+        var secondSession = login("user@example.com", "Password12!");
+
+        mockMvc.perform(get("/test/security/protected").cookie(firstSession))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_SESSION_EXPIRED"));
+
+        mockMvc.perform(get("/test/security/protected").cookie(secondSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("ok"));
+    }
+
+    @Test
+    @DisplayName("세션 쿠키는 기본 보안 속성을 포함한다")
+    void sessionCookieUsesDefaultSecurityAttributes() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/csrf"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var sessionCookie = result.getResponse().getCookie("SESSION");
+
+        assertThat(sessionCookie).isNotNull();
+        assertThat(sessionCookie.isHttpOnly()).isTrue();
+        assertThat(sessionCookie.getSecure()).isTrue();
+        assertThat(result.getResponse().getHeaders("Set-Cookie"))
+                .anySatisfy(cookieHeader -> assertThat(cookieHeader).contains("SameSite=Lax"));
+    }
+
+    @Test
     @DisplayName("로그인 정보가 올바르지 않으면 AUTH_UNAUTHORIZED를 반환한다")
     void loginRejectsInvalidCredentials() throws Exception {
         userRepository.saveAndFlush(User.createUser(
