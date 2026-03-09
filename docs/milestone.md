@@ -281,9 +281,11 @@
   - soft delete된 상품의 공개 노출 제외 정책을 적용한다.
 - 완료 조건:
   - 공개 목록/상세 조회가 동작한다.
+  - 공개 목록은 `keyword`, `category`, `page`, `size(<=100)`, `sort` 규칙을 따른다.
   - soft delete된 상품 상세 조회는 `404 Not Found`로 응답한다.
 - 핵심 테스트:
   - 목록/상세 조회 테스트
+  - 검색/필터/정렬/페이지네이션 테스트
   - soft delete 공개 제외 테스트
 - 참고 문서:
   - `docs/api.md`
