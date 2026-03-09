@@ -3,7 +3,7 @@ package com.fromvillage.admin.presentation;
 import com.fromvillage.admin.application.AdminSellerRoleService;
 import com.fromvillage.admin.application.AdminUserPage;
 import com.fromvillage.admin.application.AdminUserQueryService;
-import com.fromvillage.admin.application.AdminUserSummary;
+import com.fromvillage.admin.domain.AdminUserSummary;
 import com.fromvillage.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

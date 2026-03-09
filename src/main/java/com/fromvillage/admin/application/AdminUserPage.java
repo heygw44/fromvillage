@@ -1,5 +1,6 @@
 package com.fromvillage.admin.application;
 
+import com.fromvillage.admin.domain.AdminUserSummary;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

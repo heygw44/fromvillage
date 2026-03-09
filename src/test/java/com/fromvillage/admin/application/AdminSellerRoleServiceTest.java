@@ -2,6 +2,7 @@ package com.fromvillage.admin.application;
 
 import com.fromvillage.common.exception.BusinessException;
 import com.fromvillage.common.exception.ErrorCode;
+import com.fromvillage.admin.domain.AdminUserSummary;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.domain.UserStore;
 import org.junit.jupiter.api.DisplayName;

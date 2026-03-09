@@ -1,6 +1,6 @@
 package com.fromvillage.admin.presentation;
 
-import com.fromvillage.admin.application.AdminUserSummary;
+import com.fromvillage.admin.domain.AdminUserSummary;
 
 import java.time.LocalDateTime;
 

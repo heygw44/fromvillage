@@ -1,5 +1,6 @@
 package com.fromvillage.admin.application;
 
+import com.fromvillage.admin.domain.AdminUserSummary;
 import com.fromvillage.common.exception.BusinessException;
 import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.user.domain.User;
@@ -27,6 +28,13 @@ public class AdminSellerRoleService {
 
         user.approveSeller(LocalDateTime.now(clock));
         User savedUser = userStore.save(user);
-        return AdminUserSummary.from(savedUser);
+        return new AdminUserSummary(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                savedUser.getNickname(),
+                savedUser.getRole().name(),
+                savedUser.getSellerApprovedAt(),
+                savedUser.getCreatedAt()
+        );
     }
 }
