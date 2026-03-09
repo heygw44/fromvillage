@@ -258,6 +258,49 @@ API 응답은 전역 공통 계약으로 통일한다.
 - [Spring Security CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)
 - [Spring Session Redis](https://spring.io/blog/2015/03/01/the-portable-cloud-ready-http-session)
 - [Spring Batch Docs](https://github.com/spring-projects/spring-batch/tree/main/spring-batch-docs)
-- `docs/adr/001-auth-strategy.md`
-- `docs/adr/002-coupon-concurrency.md`
-- `docs/adr/003-settlement-batch.md`
+
+## 14. DB 스키마 마이그레이션 운영 원칙
+
+운영/스테이징처럼 `ddl-auto: validate`를 사용하는 환경의 스키마 변경은 Flyway 버전드 SQL로 관리한다.
+로컬/테스트 프로필은 기존 개발 생산성을 위해 `create-drop`을 유지하고 Flyway를 비활성화한다.
+
+`users.email` 유니크 제약명 표준화 원칙:
+
+- 표준 제약명은 `uk_users_email`로 고정한다.
+- 마이그레이션은 현재 환경의 기존 유니크 인덱스 이름을 조회해 rename 또는 create를 수행한다.
+- `users.email` 유니크 인덱스가 복수로 감지되면 자동 수정하지 않고 실패시켜 운영 점검 후 수동 정리한다.
+
+운영 반영 절차:
+
+1. 배포 전 점검 SQL로 현재 `users.email` 유니크 인덱스 이름을 확인한다.
+2. 애플리케이션 기동 시 Flyway가 마이그레이션을 수행한다.
+3. 배포 후 `uk_users_email` 존재 여부와 Flyway 이력 테이블 반영 상태를 확인한다.
+
+배포 전 점검 SQL:
+
+```sql
+SELECT s.index_name, GROUP_CONCAT(s.column_name ORDER BY s.seq_in_index) AS columns
+FROM information_schema.statistics s
+WHERE s.table_schema = DATABASE()
+  AND s.table_name = 'users'
+  AND s.non_unique = 0
+GROUP BY s.index_name
+ORDER BY s.index_name;
+```
+
+배포 후 검증 SQL:
+
+```sql
+SELECT s.index_name
+FROM information_schema.statistics s
+WHERE s.table_schema = DATABASE()
+  AND s.table_name = 'users'
+  AND s.non_unique = 0
+  AND s.column_name = 'email'
+GROUP BY s.index_name;
+
+SELECT version, description, success
+FROM flyway_schema_history
+ORDER BY installed_rank DESC
+LIMIT 5;
+```

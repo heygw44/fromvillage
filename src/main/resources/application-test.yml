@@ -4,6 +4,9 @@ spring:
       ddl-auto: create-drop
     show-sql: true
 
+  flyway:
+    enabled: false
+
   batch:
     jdbc:
       initialize-schema: always

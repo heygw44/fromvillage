@@ -34,6 +34,9 @@ ADMIN 계정은 공개 회원가입으로 생성하지 않고, 초기 시드 또
 | created_at | datetime | 생성 시각 |
 | updated_at | datetime | 수정 시각 |
 
+제약:
+- `email` unique (`uk_users_email`)
+
 ### 3.2 server_session
 
 세션 인증 상태는 Spring Session을 통해 Redis에 저장한다.
