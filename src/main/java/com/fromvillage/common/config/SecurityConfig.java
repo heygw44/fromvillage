@@ -1,6 +1,7 @@
 package com.fromvillage.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fromvillage.auth.application.LoginFailurePolicyService;
 import com.fromvillage.common.security.JsonAccessDeniedHandler;
 import com.fromvillage.common.security.JsonAuthenticationEntryPoint;
 import com.fromvillage.common.security.JsonInvalidSessionStrategy;
@@ -54,6 +55,7 @@ public class SecurityConfig {
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
     private final Validator validator;
+    private final LoginFailurePolicyService loginFailurePolicyService;
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -117,7 +119,11 @@ public class SecurityConfig {
             SecurityContextRepository securityContextRepository,
             SessionAuthenticationStrategy sessionAuthenticationStrategy
     ) {
-        JsonLoginAuthenticationFilter filter = new JsonLoginAuthenticationFilter(objectMapper, validator);
+        JsonLoginAuthenticationFilter filter = new JsonLoginAuthenticationFilter(
+                objectMapper,
+                validator,
+                loginFailurePolicyService
+        );
         filter.setAuthenticationManager(authenticationManager);
         filter.setAuthenticationSuccessHandler(loginSuccessHandler);
         filter.setAuthenticationFailureHandler(loginFailureHandler);
