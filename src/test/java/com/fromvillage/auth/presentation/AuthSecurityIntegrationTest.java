@@ -589,6 +589,23 @@ class AuthSecurityIntegrationTest {
                 .andExpect(jsonPath("$.code").value("AUTH_SESSION_EXPIRED"));
     }
 
+    @Test
+    @DisplayName("USER는 SELLER 전용 메서드에 접근할 수 없다")
+    void sellerMethodWithUserSessionReturnsForbidden() throws Exception {
+    userRepository.saveAndFlush(User.createUser(
+            "user@example.com",
+            passwordEncoder.encode("Password12!"),
+            "fromvillage"
+    ));
+
+    var loginSession = login("user@example.com", "Password12!");
+
+    mockMvc.perform(get("/test/security/seller")
+                    .cookie(loginSession))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
+}
+
     private jakarta.servlet.http.Cookie login(String email, String password) throws Exception {
         CsrfSession csrfSession = fetchCsrfSession();
 
