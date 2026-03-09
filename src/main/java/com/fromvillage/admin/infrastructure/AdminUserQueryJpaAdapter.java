@@ -17,13 +17,6 @@ public class AdminUserQueryJpaAdapter implements AdminUserQueryPort {
     @Override
     public Page<AdminUserSummary> findUsers(Pageable pageable) {
         return userJpaRepository.findAll(pageable)
-                .map(user -> new AdminUserSummary(
-                        user.getId(),
-                        user.getEmail(),
-                        user.getNickname(),
-                        user.getRole().name(),
-                        user.getSellerApprovedAt(),
-                        user.getCreatedAt()
-                ));
+                .map(AdminUserSummary::from);
     }
 }

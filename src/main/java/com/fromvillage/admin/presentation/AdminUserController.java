@@ -3,7 +3,6 @@ package com.fromvillage.admin.presentation;
 import com.fromvillage.admin.application.AdminSellerRoleService;
 import com.fromvillage.admin.application.AdminUserPage;
 import com.fromvillage.admin.application.AdminUserQueryService;
-import com.fromvillage.admin.domain.AdminUserSummary;
 import com.fromvillage.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +32,6 @@ public class AdminUserController {
 
     @PostMapping("/{userId}/seller-role")
     public ApiResponse<AdminUserResponse> approveSellerRole(@PathVariable Long userId) {
-        AdminUserSummary summary = adminSellerRoleService.approveSellerRole(userId);
-        return ApiResponse.success(AdminUserResponse.from(summary));
+        return ApiResponse.success(AdminUserResponse.from(adminSellerRoleService.approveSellerRole(userId)));
     }
 }
