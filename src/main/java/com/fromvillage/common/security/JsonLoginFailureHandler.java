@@ -27,7 +27,12 @@ public class JsonLoginFailureHandler implements AuthenticationFailureHandler {
             AuthenticationException exception
     ) throws IOException, ServletException {
         if (exception instanceof AuthenticationServiceException) {
-            responseWriter.writeError(response, ErrorCode.AUTH_UNAUTHORIZED, exception.getMessage());
+            if (JsonLoginAuthenticationFilter.EMPTY_LOGIN_REQUEST_MESSAGE.equals(exception.getMessage())) {
+                responseWriter.writeError(response, ErrorCode.AUTH_UNAUTHORIZED, JsonLoginAuthenticationFilter.EMPTY_LOGIN_REQUEST_MESSAGE);
+                return;
+            }
+
+            responseWriter.writeError(response, ErrorCode.AUTH_UNAUTHORIZED, JsonLoginAuthenticationFilter.INVALID_LOGIN_REQUEST_MESSAGE);
             return;
         }
 

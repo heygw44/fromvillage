@@ -162,7 +162,22 @@ class AuthSecurityIntegrationTest {
                         ))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"))
-                .andExpect(jsonPath("$.message").value("이메일과 비밀번호는 필수입니다."));
+                .andExpect(jsonPath("$.message").value("로그인 요청이 올바르지 않습니다."));
+    }
+
+    @Test
+    @DisplayName("로그인 요청 본문이 literal null이면 AUTH_UNAUTHORIZED를 반환한다")
+    void loginRejectsLiteralNullBody() throws Exception {
+        CsrfSession csrfSession = fetchCsrfSession();
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content("null"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("로그인 요청 본문이 비어있습니다."));
     }
 
     @Test

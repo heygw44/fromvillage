@@ -12,11 +12,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 
 public class JsonLoginAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    public static final String INVALID_LOGIN_REQUEST_MESSAGE = "로그인 요청이 올바르지 않습니다.";
+    public static final String EMPTY_LOGIN_REQUEST_MESSAGE = "로그인 요청 본문이 비어있습니다.";
 
     private final ObjectMapper objectMapper;
     private final Validator validator;
@@ -49,19 +51,23 @@ public class JsonLoginAuthenticationFilter extends UsernamePasswordAuthenticatio
 
     private LoginRequestPayload readLoginRequest(HttpServletRequest request) {
         try {
-            return objectMapper.readValue(request.getInputStream(), LoginRequestPayload.class);
+            LoginRequestPayload loginRequest = objectMapper.readValue(request.getInputStream(), LoginRequestPayload.class);
+            if (loginRequest == null) {
+                throw new AuthenticationServiceException(EMPTY_LOGIN_REQUEST_MESSAGE);
+            }
+            return loginRequest;
         } catch (IOException exception) {
             throw new AuthenticationServiceException("로그인 요청 본문을 읽을 수 없습니다.", exception);
         }
     }
 
     private void validate(LoginRequestPayload loginRequest) {
-        if (!StringUtils.hasText(loginRequest.email()) || !StringUtils.hasText(loginRequest.password())) {
-            throw new AuthenticationServiceException("이메일과 비밀번호는 필수입니다.");
+        if (loginRequest == null) {
+            throw new AuthenticationServiceException(EMPTY_LOGIN_REQUEST_MESSAGE);
         }
 
-        for (ConstraintViolation<LoginRequestPayload> violation : validator.validate(loginRequest)) {
-            throw new AuthenticationServiceException(violation.getMessage());
+        for (ConstraintViolation<LoginRequestPayload> ignored : validator.validate(loginRequest)) {
+            throw new AuthenticationServiceException(INVALID_LOGIN_REQUEST_MESSAGE);
         }
     }
 }
