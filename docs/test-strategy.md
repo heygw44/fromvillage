@@ -51,7 +51,9 @@
 - URL 보안 + 메서드 보안 동시 검증
 - USER/SELLER/ADMIN 권한별 접근 제어
 - M1 인증/인가 회귀는 실제 비즈니스 API 대신 auth/security 통합 테스트의 보호 probe 엔드포인트로 역할 매트릭스를 잠근다.
+- 관리자 회원 목록 조회 API가 페이지 메타데이터와 기본 사용자 필드만 반환하는지 검증
 - 판매자 승인 시 `USER -> SELLER`만 허용되고, 이미 SELLER이거나 ADMIN인 계정은 거절되는지 검증
+- 존재하지 않는 사용자 판매자 승인 요청의 `404 + USER_NOT_FOUND` 응답 검증
 - SELLER 본인 상품 목록 조회 API 권한 및 소유권 검증
 - 세션 생성 및 로그인 성공 후 세션 ID 재발급 검증
 - Redis 세션 저장소가 indexed repository로 등록되고, 세션 데이터가 `fromvillage:session` 네임스페이스에 저장되는지 검증

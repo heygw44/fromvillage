@@ -511,6 +511,43 @@
 - `GET /api/v1/admin/users`
 - `ADMIN`
 - `page`, `size`, `sort` 지원
+- `sort` 미지정 시 `createdAt,desc`를 기본값으로 사용한다.
+- 응답 항목은 `userId`, `email`, `nickname`, `role`, `sellerApprovedAt`, `createdAt`만 포함한다.
+
+응답 예시:
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "content": [
+      {
+        "userId": 1,
+        "email": "admin@example.com",
+        "nickname": "운영자",
+        "role": "ADMIN",
+        "sellerApprovedAt": null,
+        "createdAt": "2026-03-09T00:00:00"
+      },
+      {
+        "userId": 2,
+        "email": "seller@example.com",
+        "nickname": "판매자",
+        "role": "SELLER",
+        "sellerApprovedAt": "2026-03-09T00:00:00",
+        "createdAt": "2026-03-09T00:05:00"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 2,
+    "totalPages": 1,
+    "hasNext": false
+  }
+}
+```
 
 ### 10.2 판매자 권한 부여
 
@@ -520,6 +557,25 @@
 - 대상 계정의 역할은 `USER -> SELLER`로 전환된다.
 - 이미 SELLER인 계정에는 다시 판매자 권한을 부여하지 않는다.
 - ADMIN 계정은 SELLER로 전환하지 않는다.
+- 존재하지 않는 `userId`는 `404 + USER_NOT_FOUND`를 반환한다.
+
+성공 응답 예시:
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "userId": 3,
+    "email": "user@example.com",
+    "nickname": "일반회원",
+    "role": "SELLER",
+    "sellerApprovedAt": "2026-03-09T00:00:00",
+    "createdAt": "2026-03-08T21:00:00"
+  }
+}
+```
 
 ### 10.3 쿠폰 정책 생성
 

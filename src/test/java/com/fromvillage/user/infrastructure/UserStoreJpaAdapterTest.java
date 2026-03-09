@@ -35,7 +35,9 @@ class UserStoreJpaAdapterTest {
         assertThat(savedUser.getId()).isNotNull();
         assertThat(userStore.existsByEmail("user@example.com")).isTrue();
         assertThat(userStore.findByEmail("user@example.com")).contains(savedUser);
+        assertThat(userStore.findById(savedUser.getId())).contains(savedUser);
         assertThat(userStore.findByEmail("missing@example.com")).isEmpty();
+        assertThat(userStore.findById(-1L)).isEmpty();
     }
 
     @Test
