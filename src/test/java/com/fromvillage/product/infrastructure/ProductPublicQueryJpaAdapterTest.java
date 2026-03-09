@@ -3,7 +3,10 @@ package com.fromvillage.product.infrastructure;
 import com.fromvillage.common.config.JpaAuditingConfig;
 import com.fromvillage.product.domain.Product;
 import com.fromvillage.product.domain.ProductCategory;
+import com.fromvillage.product.domain.ProductPageRequest;
 import com.fromvillage.product.domain.ProductPublicQueryPort;
+import com.fromvillage.product.domain.ProductPublicQueryCondition;
+import com.fromvillage.product.domain.ProductPublicSort;
 import com.fromvillage.support.TestContainersConfig;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.infrastructure.UserJpaRepository;
@@ -12,8 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -73,14 +74,13 @@ class ProductPublicQueryJpaAdapterTest {
         markDeleted(deletedProduct.getId());
 
         var result = productPublicQueryPort.findPublicProducts(
-                "감자",
-                ProductCategory.AGRICULTURE,
-                PageRequest.of(0, 10, Sort.by("price").ascending())
+                new ProductPublicQueryCondition("감자", ProductCategory.AGRICULTURE),
+                new ProductPageRequest(0, 10, ProductPublicSort.PRICE_ASC)
         );
 
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getName()).isEqualTo("유기농 감자 5kg");
-        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().get(0).getName()).isEqualTo("유기농 감자 5kg");
+        assertThat(result.totalElements()).isEqualTo(1);
     }
 
     @Test

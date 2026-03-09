@@ -3,11 +3,11 @@ package com.fromvillage.product.application;
 import com.fromvillage.common.exception.BusinessException;
 import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.product.domain.ProductCategory;
+import com.fromvillage.product.domain.ProductPageRequest;
+import com.fromvillage.product.domain.ProductPublicQueryCondition;
 import com.fromvillage.product.domain.ProductPublicQueryPort;
+import com.fromvillage.product.domain.ProductPublicSort;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +19,13 @@ public class ProductPublicQueryService {
 
     @Transactional(readOnly = true)
     public ProductPublicPage getProducts(String keyword, String category, int page, int size, String sort) {
-        Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
         ProductCategory productCategory = category == null ? null : ProductCategory.valueOf(category);
 
         return ProductPublicPage.from(
-                productPublicQueryPort.findPublicProducts(normalizeKeyword(keyword), productCategory, pageable)
+                productPublicQueryPort.findPublicProducts(
+                        new ProductPublicQueryCondition(normalizeKeyword(keyword), productCategory),
+                        new ProductPageRequest(page, size, resolveSort(sort))
+                )
         );
     }
 
@@ -42,20 +44,11 @@ public class ProductPublicQueryService {
         return normalized.isEmpty() ? null : normalized;
     }
 
-    private Sort resolveSort(String sort) {
+    private ProductPublicSort resolveSort(String sort) {
         return switch (sort) {
-            case "createdAt,desc" -> Sort.by(
-                    Sort.Order.desc("createdAt"),
-                    Sort.Order.desc("id")
-            );
-            case "price,asc" -> Sort.by(
-                    Sort.Order.asc("price"),
-                    Sort.Order.desc("id")
-            );
-            case "price,desc" -> Sort.by(
-                    Sort.Order.desc("price"),
-                    Sort.Order.desc("id")
-            );
+            case "createdAt,desc" -> ProductPublicSort.CREATED_AT_DESC;
+            case "price,asc" -> ProductPublicSort.PRICE_ASC;
+            case "price,desc" -> ProductPublicSort.PRICE_DESC;
             default -> throw new BusinessException(ErrorCode.VALIDATION_ERROR);
         };
     }

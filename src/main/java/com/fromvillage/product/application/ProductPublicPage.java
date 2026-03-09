@@ -1,7 +1,7 @@
 package com.fromvillage.product.application;
 
 import com.fromvillage.product.domain.Product;
-import org.springframework.data.domain.Page;
+import com.fromvillage.product.domain.ProductPageResult;
 
 import java.util.List;
 
@@ -14,15 +14,15 @@ public record ProductPublicPage(
         boolean hasNext
 ) {
 
-    public static ProductPublicPage from(Page<Product> page) {
+    public static ProductPublicPage from(ProductPageResult<Product> page) {
         return new ProductPublicPage(
-                page.getContent().stream()
+                page.content().stream()
                         .map(ProductPublicSummary::from)
                         .toList(),
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
+                page.page(),
+                page.size(),
+                page.totalElements(),
+                page.totalPages(),
                 page.hasNext()
         );
     }
