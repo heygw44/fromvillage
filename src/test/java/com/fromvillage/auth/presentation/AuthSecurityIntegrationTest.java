@@ -34,6 +34,7 @@ import java.util.Set;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -418,6 +419,124 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("ADMIN은 ADMIN 전용 메서드에 접근할 수 있다")
+    void adminMethodWithAdminSessionReturnsOk() throws Exception {
+        userRepository.saveAndFlush(User.createAdmin(
+                "admin@example.com",
+                passwordEncoder.encode("Password12!"),
+                "admin"
+        ));
+
+        var loginSession = login("admin@example.com", "Password12!");
+
+        mockMvc.perform(get("/test/security/admin")
+                        .cookie(loginSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("admin"));
+    }
+
+    @Test
+    @DisplayName("SELLER는 SELLER 전용 메서드에 접근할 수 있다")
+    void sellerMethodWithSellerSessionReturnsOk() throws Exception {
+        userRepository.saveAndFlush(createSeller(
+                "seller@example.com",
+                passwordEncoder.encode("Password12!"),
+                "seller"
+        ));
+
+        var loginSession = login("seller@example.com", "Password12!");
+
+        mockMvc.perform(get("/test/security/seller")
+                        .cookie(loginSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("seller"));
+    }
+
+    @Test
+    @DisplayName("ADMIN은 SELLER 전용 메서드에 접근할 수 없다")
+    void sellerMethodWithAdminSessionReturnsForbidden() throws Exception {
+        userRepository.saveAndFlush(User.createAdmin(
+                "admin@example.com",
+                passwordEncoder.encode("Password12!"),
+                "admin"
+        ));
+
+        var loginSession = login("admin@example.com", "Password12!");
+
+        mockMvc.perform(get("/test/security/seller")
+                        .cookie(loginSession))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("로그인으로 세션이 바뀌면 이전 CSRF 토큰은 더 이상 사용할 수 없다")
+    void loginRequiresFreshCsrfTokenForSubsequentWrite() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        CsrfSession anonymousCsrfSession = fetchCsrfSession();
+        var loginSession = login("user@example.com", "Password12!");
+
+        mockMvc.perform(post("/test/security/protected")
+                        .cookie(loginSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(anonymousCsrfSession.headerName(), anonymousCsrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of("value", "stale-token"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_CSRF_INVALID"));
+
+        CsrfSession authenticatedCsrfSession = fetchCsrfSession(loginSession);
+
+        mockMvc.perform(post("/test/security/protected")
+                        .cookie(authenticatedCsrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(authenticatedCsrfSession.headerName(), authenticatedCsrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of("value", "fresh-token"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("ok"));
+    }
+
+    @Test
+    @DisplayName("로그아웃 후 CSRF를 다시 조회하면 새로운 세션과 토큰을 받는다")
+    void logoutRequiresFreshCsrfFetchForNextSession() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "fromvillage"
+        ));
+
+        var loginSession = login("user@example.com", "Password12!");
+        var logoutCsrf = fetchCsrfSession(loginSession);
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .cookie(loginSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(logoutCsrf.headerName(), logoutCsrf.token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        CsrfSession refreshedCsrf = fetchCsrfSession();
+
+        assertThat(refreshedCsrf.sessionCookie().getValue()).isNotEqualTo(loginSession.getValue());
+        assertThat(refreshedCsrf.token()).isNotEqualTo(logoutCsrf.token());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(refreshedCsrf.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(refreshedCsrf.headerName(), refreshedCsrf.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "user@example.com",
+                                "password", "Password12!"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value("user@example.com"));
+    }
+
+    @Test
     @DisplayName("만료된 세션 쿠키로 보호 경로에 접근하면 AUTH_SESSION_EXPIRED를 반환한다")
     void protectedEndpointWithExpiredSessionReturnsSessionExpired() throws Exception {
         userRepository.saveAndFlush(User.createUser(
@@ -437,6 +556,12 @@ class AuthSecurityIntegrationTest {
                         .cookie(loginSession))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_SESSION_EXPIRED"));
+    }
+
+    private User createSeller(String email, String password, String nickname) {
+        User seller = User.createUser(email, password, nickname);
+        seller.approveSeller(LocalDateTime.now(clock));
+        return seller;
     }
 
     @Test
@@ -585,6 +710,11 @@ class AuthSecurityIntegrationTest {
         ApiResponse<String> adminOnly() {
             return ApiResponse.success(securityProbeService.adminOnly());
         }
+
+        @GetMapping("/seller")
+        ApiResponse<String> sellerOnly() {
+            return ApiResponse.success(securityProbeService.sellerOnly());
+        }
     }
 
     static class SecurityProbeService {
@@ -592,6 +722,11 @@ class AuthSecurityIntegrationTest {
         @PreAuthorize("hasRole('ADMIN')")
         String adminOnly() {
             return "admin";
+        }
+
+        @PreAuthorize("hasRole('SELLER')")
+        String sellerOnly() {
+            return "seller";
         }
     }
 
