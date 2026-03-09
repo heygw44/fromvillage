@@ -41,6 +41,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final int MAXIMUM_SESSIONS = 1;
+
     private final JsonAuthenticationEntryPoint authenticationEntryPoint;
     private final JsonAccessDeniedHandler accessDeniedHandler;
     private final JsonInvalidSessionStrategy invalidSessionStrategy;
@@ -77,7 +79,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session
                         .invalidSessionStrategy(invalidSessionStrategy)
-                        .maximumSessions(1)
+                        .maximumSessions(MAXIMUM_SESSIONS)
                         .maxSessionsPreventsLogin(false)
                         .expiredSessionStrategy(sessionInformationExpiredStrategy)
                         .sessionRegistry(sessionRegistry)
@@ -128,7 +130,7 @@ public class SecurityConfig {
     SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
         ConcurrentSessionControlAuthenticationStrategy concurrentSessionControl =
                 new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
-        concurrentSessionControl.setMaximumSessions(1);
+        concurrentSessionControl.setMaximumSessions(MAXIMUM_SESSIONS);
         concurrentSessionControl.setExceptionIfMaximumExceeded(false);
 
         return new CompositeSessionAuthenticationStrategy(List.of(

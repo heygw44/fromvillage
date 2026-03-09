@@ -10,8 +10,6 @@ import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
-import java.util.Locale;
-
 @Configuration(proxyBeanMethods = false)
 public class SessionConfig {
 
@@ -25,21 +23,12 @@ public class SessionConfig {
         serializer.setCookieName("SESSION");
         serializer.setUseHttpOnlyCookie(httpOnly);
         serializer.setUseSecureCookie(secure);
-        serializer.setSameSite(normalizeSameSite(sameSite));
+        serializer.setSameSite(sameSite);
         return serializer;
     }
 
     @Bean
     SessionRegistry sessionRegistry(FindByIndexNameSessionRepository<? extends Session> sessionRepository) {
         return new SpringSessionBackedSessionRegistry<>(sessionRepository);
-    }
-
-    private String normalizeSameSite(String sameSite) {
-        if (sameSite == null || sameSite.isBlank()) {
-            return "Lax";
-        }
-
-        String normalized = sameSite.trim().toLowerCase(Locale.ROOT);
-        return normalized.substring(0, 1).toUpperCase(Locale.ROOT) + normalized.substring(1);
     }
 }
