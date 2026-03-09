@@ -34,3 +34,6 @@ CLAUDE.md
 
 # Docker
 docker-compose.override.yml
+
+#codebase
+docs/codebase/
