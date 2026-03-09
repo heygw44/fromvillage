@@ -16,6 +16,16 @@ public record ErrorResponse(
         return of(errorCode, List.of());
     }
 
+    public static ErrorResponse of(ErrorCode errorCode, String message) {
+        return new ErrorResponse(
+                false,
+                errorCode.getCode(),
+                message,
+                null,
+                List.of()
+        );
+    }
+
     public static ErrorResponse of(ErrorCode errorCode, List<ValidationErrorData> errors) {
         return new ErrorResponse(
                 false,
