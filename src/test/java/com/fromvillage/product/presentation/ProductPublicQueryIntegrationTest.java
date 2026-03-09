@@ -204,6 +204,15 @@ class ProductPublicQueryIntegrationTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
+    @Test
+    @DisplayName("size가 100을 초과하면 VALIDATION_ERROR를 반환한다")
+    void getProductsRejectsTooLargeSize() throws Exception {
+        mockMvc.perform(get("/api/v1/products")
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
     private User createSeller(String email) {
         User seller = User.createUser(email, "encoded-password", "seller");
         seller.approveSeller(LocalDateTime.of(2026, 3, 10, 0, 0));

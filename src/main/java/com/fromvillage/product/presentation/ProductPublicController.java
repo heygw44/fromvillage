@@ -2,6 +2,7 @@ package com.fromvillage.product.presentation;
 
 import com.fromvillage.common.response.ApiResponse;
 import com.fromvillage.product.application.ProductPublicQueryService;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductPublicController {
 
     private static final String CATEGORY_PATTERN = "AGRICULTURE|FISHERY";
-    private static final String SORT_PATTERN = "createdAt,desc|price,asc|price,desc";
 
     private final ProductPublicQueryService productPublicQueryService;
 
@@ -34,10 +34,9 @@ public class ProductPublicController {
             int page,
             @RequestParam(defaultValue = "20")
             @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
+            @Max(value = 100, message = "페이지 크기는 100 이하여야 합니다.")
             int size,
-            @RequestParam(defaultValue = "createdAt,desc")
-            @Pattern(regexp = SORT_PATTERN, message = "정렬 조건을 다시 확인해 주세요.")
-            String sort
+            @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
         return ApiResponse.success(ProductPublicPageResponse.from(
                 productPublicQueryService.getProducts(keyword, category, page, size, sort)

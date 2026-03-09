@@ -263,15 +263,18 @@
   `AGRICULTURE`, `FISHERY`
 - `page`
 - `size`
+  1 이상 100 이하
 - `sort`
   `createdAt,desc`, `price,asc`, `price,desc`
 
 설명:
 
 - `keyword`는 상품명 포함 검색에 사용한다.
+- `keyword` 검색은 MVP 단계에서는 DB `LIKE %keyword%` 기반으로 처리한다.
 - `category`는 `AGRICULTURE`, `FISHERY`만 허용한다.
 - `sort`는 `createdAt,desc`, `price,asc`, `price,desc`만 허용한다.
 - soft delete된 상품은 공개 목록에서 제외한다.
+- 상품 수가 크게 늘어나면 Full-Text Search 또는 별도 검색 인프라 도입을 검토한다.
 
 응답 데이터 예시:
 
