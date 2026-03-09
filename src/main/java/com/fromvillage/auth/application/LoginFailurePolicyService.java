@@ -39,16 +39,8 @@ public class LoginFailurePolicyService {
         }
 
         Instant now = Instant.now(clock);
-        LoginFailureState currentState = loginFailureStore.find(normalizedEmail)
-                .filter(state -> state.lockedUntil() == null || state.isLocked(now))
-                .orElse(new LoginFailureState(0, null));
-
-        int nextFailureCount = currentState.failedCount() + 1;
-        Instant lockedUntil = nextFailureCount >= MAX_FAILURES ? now.plus(LOCK_DURATION) : null;
-        Duration ttl = lockedUntil == null ? null : Duration.between(now, lockedUntil);
-
-        loginFailureStore.save(normalizedEmail, new LoginFailureState(nextFailureCount, lockedUntil), ttl);
-        return lockedUntil != null;
+        LoginFailureState updatedState = loginFailureStore.recordFailure(normalizedEmail, now, MAX_FAILURES, LOCK_DURATION);
+        return updatedState.isLocked(now);
     }
 
     public void clear(String email) {
