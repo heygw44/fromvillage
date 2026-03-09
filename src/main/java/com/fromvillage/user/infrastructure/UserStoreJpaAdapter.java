@@ -34,6 +34,11 @@ public class UserStoreJpaAdapter implements UserStore {
     }
 
     @Override
+    public Optional<User> findById(Long id) {
+        return userJpaRepository.findById(id);
+    }
+
+    @Override
     public User save(User user) {
         try {
             return userJpaRepository.saveAndFlush(user);

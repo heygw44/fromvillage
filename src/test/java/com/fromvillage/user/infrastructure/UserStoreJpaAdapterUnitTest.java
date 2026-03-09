@@ -58,6 +58,17 @@ class UserStoreJpaAdapterUnitTest {
     }
 
     @Test
+    @DisplayName("ID로 사용자를 조회할 때 저장소 결과를 그대로 반환한다")
+    void findByIdReturnsRepositoryResult() {
+        User user = User.createUser("user@example.com", "encoded-password", "nickname");
+        given(userJpaRepository.findById(1L)).willReturn(java.util.Optional.of(user));
+        given(userJpaRepository.findById(999L)).willReturn(java.util.Optional.empty());
+
+        assertThat(userStoreJpaAdapter.findById(1L)).contains(user);
+        assertThat(userStoreJpaAdapter.findById(999L)).isEmpty();
+    }
+
+    @Test
     @DisplayName("이메일 제약이 아닌 저장 예외는 그대로 다시 던진다")
     void saveRethrowsNonEmailConstraintViolation() {
         DataIntegrityViolationException exception = new DataIntegrityViolationException("Column 'nickname' cannot be null");
