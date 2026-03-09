@@ -93,9 +93,9 @@ class LoginFailurePolicyServiceTest {
     }
 
     @Test
-    @DisplayName("동시 실패 기록은 누락 없이 누적되어야 한다")
-    void concurrentFailuresShouldBeCountedWithoutLoss() {
-        StaleReadLoginFailureStore store = new StaleReadLoginFailureStore();
+    @DisplayName("실패 기록은 순차 호출마다 누적된다")
+    void sequentialFailuresAccumulate() {
+        InMemoryLoginFailureStore store = new InMemoryLoginFailureStore();
         MutableClock clock = new MutableClock(Instant.parse("2026-03-09T00:00:00Z"));
         LoginFailurePolicyService service = new LoginFailurePolicyService(store, clock);
 
@@ -148,29 +148,6 @@ class LoginFailurePolicyServiceTest {
 
         private Map<String, LoginFailureState> states() {
             return states;
-        }
-    }
-
-    private static final class StaleReadLoginFailureStore implements LoginFailureStore {
-
-        private LoginFailureState state;
-
-        @Override
-        public Optional<LoginFailureState> find(String normalizedEmail) {
-            return Optional.ofNullable(state);
-        }
-
-        @Override
-        public LoginFailureState recordFailure(String normalizedEmail, Instant now, int maxFailures, Duration lockDuration) {
-            int nextFailureCount = state == null ? 1 : state.failedCount() + 1;
-            Instant lockedUntil = nextFailureCount >= maxFailures ? now.plus(lockDuration) : null;
-            state = new LoginFailureState(nextFailureCount, lockedUntil);
-            return state;
-        }
-
-        @Override
-        public void delete(String normalizedEmail) {
-            state = null;
         }
     }
 

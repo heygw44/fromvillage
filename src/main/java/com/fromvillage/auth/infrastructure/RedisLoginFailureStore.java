@@ -30,7 +30,13 @@ public class RedisLoginFailureStore implements LoginFailureStore {
                     local maxFailures = tonumber(ARGV[4])
                     local lockDurationMillis = tonumber(ARGV[5])
 
-                    local failedCount = redis.call('HINCRBY', key, failedCountField, 1)
+                    local currentFailedCount = tonumber(redis.call('HGET', key, failedCountField))
+                    if currentFailedCount == nil then
+                        currentFailedCount = 0
+                    end
+
+                    local failedCount = currentFailedCount + 1
+                    redis.call('HSET', key, failedCountField, failedCount)
 
                     if failedCount >= maxFailures then
                         local lockedUntil = nowEpochMilli + lockDurationMillis
