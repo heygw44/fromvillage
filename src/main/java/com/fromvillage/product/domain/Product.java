@@ -44,7 +44,7 @@ public class Product extends BaseTimeEntity {
     private String name;
 
     @Getter
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, columnDefinition = "text")
     private String description;
 
     @Getter
@@ -54,7 +54,7 @@ public class Product extends BaseTimeEntity {
 
     @Getter
     @Column(nullable = false)
-    private Integer price;
+    private Long price;
 
     @Getter
     @Column(name = "stock_quantity", nullable = false)
@@ -78,7 +78,7 @@ public class Product extends BaseTimeEntity {
             String name,
             String description,
             ProductCategory category,
-            Integer price,
+            Long price,
             Integer stockQuantity,
             String imageUrl,
             ProductStatus status
@@ -87,8 +87,8 @@ public class Product extends BaseTimeEntity {
         this.name = Objects.requireNonNull(name);
         this.description = Objects.requireNonNull(description);
         this.category = Objects.requireNonNull(category);
-        this.price = Objects.requireNonNull(price);
-        this.stockQuantity = Objects.requireNonNull(stockQuantity);
+        this.price = requirePrice(price);
+        this.stockQuantity = requireStockQuantity(stockQuantity);
         this.imageUrl = requireHttpsImageUrl(imageUrl);
         this.status = Objects.requireNonNull(status);
         this.deletedAt = null;
@@ -99,7 +99,7 @@ public class Product extends BaseTimeEntity {
             String name,
             String description,
             ProductCategory category,
-            Integer price,
+            Long price,
             Integer stockQuantity,
             String imageUrl
     ) {
@@ -116,6 +116,22 @@ public class Product extends BaseTimeEntity {
             throw new BusinessException(ErrorCode.PRODUCT_SELLER_ROLE_REQUIRED);
         }
         return owner;
+    }
+
+    private static Long requirePrice(Long price) {
+        Long value = Objects.requireNonNull(price);
+        if (value <= 0) {
+            throw new BusinessException(ErrorCode.PRODUCT_PRICE_INVALID);
+        }
+        return value;
+    }
+
+    private static Integer requireStockQuantity(Integer stockQuantity) {
+        Integer value = Objects.requireNonNull(stockQuantity);
+        if (value < 0) {
+            throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+        }
+        return value;
     }
 
     private static String requireHttpsImageUrl(String imageUrl) {

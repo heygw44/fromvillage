@@ -14,6 +14,8 @@ public enum ErrorCode {
     USER_ALREADY_SELLER(HttpStatus.CONFLICT, "USER_ALREADY_SELLER", "이미 판매자 권한이 부여된 계정입니다."),
     SELLER_APPROVAL_NOT_ALLOWED(HttpStatus.CONFLICT, "SELLER_APPROVAL_NOT_ALLOWED", "판매자 권한은 일반 회원에게만 부여할 수 있습니다."),
     PRODUCT_SELLER_ROLE_REQUIRED(HttpStatus.BAD_REQUEST, "PRODUCT_SELLER_ROLE_REQUIRED", "상품은 판매자 계정으로만 등록할 수 있습니다."),
+    PRODUCT_PRICE_INVALID(HttpStatus.BAD_REQUEST, "PRODUCT_PRICE_INVALID", "상품 가격은 0보다 커야 합니다."),
+    PRODUCT_STOCK_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "PRODUCT_STOCK_QUANTITY_INVALID", "상품 재고는 0 이상이어야 합니다."),
     PRODUCT_IMAGE_URL_INVALID(HttpStatus.BAD_REQUEST, "PRODUCT_IMAGE_URL_INVALID", "상품 이미지는 https 주소만 사용할 수 있습니다."),
     COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_INTERNAL_ERROR", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
 

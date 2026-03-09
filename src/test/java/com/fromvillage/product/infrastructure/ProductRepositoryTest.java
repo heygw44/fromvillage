@@ -42,7 +42,7 @@ class ProductRepositoryTest {
                 "감자",
                 "해남 햇감자",
                 ProductCategory.AGRICULTURE,
-                12000,
+                12000L,
                 5,
                 "https://cdn.example.com/potato.jpg"
         );
@@ -67,7 +67,7 @@ class ProductRepositoryTest {
                 "감자",
                 "해남 햇감자",
                 ProductCategory.AGRICULTURE,
-                12000,
+                12000L,
                 5,
                 "https://cdn.example.com/potato.jpg"
         ));
@@ -76,7 +76,7 @@ class ProductRepositoryTest {
                 "배추",
                 "제주 월동배추",
                 ProductCategory.AGRICULTURE,
-                15000,
+                15000L,
                 0,
                 "https://cdn.example.com/cabbage.jpg"
         ));
@@ -85,7 +85,7 @@ class ProductRepositoryTest {
                 "멸치",
                 "남해 멸치",
                 ProductCategory.FISHERY,
-                9000,
+                9000L,
                 3,
                 "https://cdn.example.com/anchovy.jpg"
         ));
@@ -111,7 +111,7 @@ class ProductRepositoryTest {
                 "멸치",
                 "남해 멸치",
                 ProductCategory.FISHERY,
-                9000,
+                9000L,
                 0,
                 "https://cdn.example.com/anchovy.jpg"
         ));

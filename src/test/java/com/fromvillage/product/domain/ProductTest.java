@@ -22,7 +22,7 @@ class ProductTest {
                 "감자",
                 "해남 햇감자",
                 ProductCategory.AGRICULTURE,
-                12000,
+                12000L,
                 5,
                 "https://cdn.example.com/potato.jpg"
         );
@@ -31,7 +31,7 @@ class ProductTest {
         assertThat(product.getName()).isEqualTo("감자");
         assertThat(product.getDescription()).isEqualTo("해남 햇감자");
         assertThat(product.getCategory()).isEqualTo(ProductCategory.AGRICULTURE);
-        assertThat(product.getPrice()).isEqualTo(12000);
+        assertThat(product.getPrice()).isEqualTo(12000L);
         assertThat(product.getStockQuantity()).isEqualTo(5);
         assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
         assertThat(product.getImageUrl()).isEqualTo("https://cdn.example.com/potato.jpg");
@@ -49,7 +49,7 @@ class ProductTest {
                 "멸치",
                 "남해 멸치",
                 ProductCategory.FISHERY,
-                9000,
+                9000L,
                 0,
                 "https://cdn.example.com/anchovy.jpg"
         );
@@ -67,7 +67,7 @@ class ProductTest {
                 "감자",
                 "해남 햇감자",
                 ProductCategory.AGRICULTURE,
-                12000,
+                12000L,
                 5,
                 "https://cdn.example.com/potato.jpg"
         )).isInstanceOf(BusinessException.class)
@@ -86,11 +86,49 @@ class ProductTest {
                 "감자",
                 "해남 햇감자",
                 ProductCategory.AGRICULTURE,
-                12000,
+                12000L,
                 5,
                 "http://cdn.example.com/potato.jpg"
         )).isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.PRODUCT_IMAGE_URL_INVALID);
+    }
+
+    @Test
+    @DisplayName("상품 가격은 0보다 커야 한다")
+    void createProductRejectsNonPositivePrice() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(java.time.LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        assertThatThrownBy(() -> Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                0L,
+                5,
+                "https://cdn.example.com/potato.jpg"
+        )).isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_PRICE_INVALID);
+    }
+
+    @Test
+    @DisplayName("상품 재고는 0 이상이어야 한다")
+    void createProductRejectsNegativeStockQuantity() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(java.time.LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        assertThatThrownBy(() -> Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                -1,
+                "https://cdn.example.com/potato.jpg"
+        )).isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
     }
 }
