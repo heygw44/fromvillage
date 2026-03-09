@@ -77,6 +77,7 @@
 - 쿠폰 미사용 주문에서 `issuedCouponId`와 `targetSellerId` 생략이 허용되는지 검증
 - 쿠폰 최소 주문 금액을 할인 전 `seller_order.total_amount` 기준으로 검증하는지 확인
 - 상품 `imageUrl`의 `https` 검증 및 서버 비-fetch 정책 검증
+- 공개 상품 목록 조회의 `keyword`, `category`, `sort`, 페이지네이션 계약 검증
 - soft delete된 상품이 공개 조회와 신규 주문 흐름에서 제외되는지 검증
 - soft delete된 상품 상세 조회가 `404 Not Found`로 응답하는지 검증
 - 공통 응답 래퍼와 에러 계약 검증

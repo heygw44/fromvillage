@@ -266,6 +266,45 @@
 - `sort`
   `createdAt,desc`, `price,asc`, `price,desc`
 
+설명:
+
+- `keyword`는 상품명 포함 검색에 사용한다.
+- `category`는 `AGRICULTURE`, `FISHERY`만 허용한다.
+- `sort`는 `createdAt,desc`, `price,asc`, `price,desc`만 허용한다.
+- soft delete된 상품은 공개 목록에서 제외한다.
+
+응답 데이터 예시:
+
+```json
+{
+  "content": [
+    {
+      "productId": 12,
+      "name": "유기농 감자 5kg",
+      "category": "AGRICULTURE",
+      "price": 22000,
+      "stockQuantity": 12,
+      "status": "ON_SALE",
+      "imageUrl": "https://cdn.example.com/potato.jpg"
+    },
+    {
+      "productId": 18,
+      "name": "완도 활전복 1kg",
+      "category": "FISHERY",
+      "price": 39000,
+      "stockQuantity": 0,
+      "status": "SOLD_OUT",
+      "imageUrl": "https://cdn.example.com/abalone.jpg"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1,
+  "hasNext": false
+}
+```
+
 ### 6.2 상품 상세 조회
 
 - `GET /api/v1/products/{productId}`
@@ -274,6 +313,33 @@
 설명:
 
 - soft delete된 상품은 공개 상세 조회에서 `404 Not Found`로 응답한다.
+
+응답 데이터 예시:
+
+```json
+{
+  "productId": 18,
+  "name": "완도 활전복 1kg",
+  "description": "완도 산지 직송 상품입니다.",
+  "category": "FISHERY",
+  "price": 39000,
+  "stockQuantity": 0,
+  "status": "SOLD_OUT",
+  "imageUrl": "https://cdn.example.com/abalone.jpg"
+}
+```
+
+상품 미존재/비공개 실패 예시:
+
+```json
+{
+  "success": false,
+  "code": "PRODUCT_NOT_FOUND",
+  "message": "상품을 찾을 수 없습니다.",
+  "data": null,
+  "errors": []
+}
+```
 
 ### 6.3 상품 등록
 
