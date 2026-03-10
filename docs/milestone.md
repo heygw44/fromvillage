@@ -307,6 +307,8 @@
   - SELLER 성공 테스트
   - 타인 상품 접근 실패 테스트
   - 이미지 URL 검증 실패 테스트
+  - USER/ADMIN 접근 거부 및 CSRF 보호 테스트
+  - soft delete 처리 검증 테스트
 - 참고 문서:
   - `docs/api.md`
   - `docs/architecture.md`

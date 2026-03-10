@@ -360,6 +360,35 @@
 - `imageUrl`
   `https` URL만 허용하며, 서버는 외부 URL을 직접 fetch하지 않는다.
 
+요청 예시:
+
+```json
+{
+  "name": "유기농 감자 5kg",
+  "description": "해남 햇감자입니다.",
+  "category": "AGRICULTURE",
+  "price": 22000,
+  "stockQuantity": 12,
+  "imageUrl": "https://cdn.example.com/potato.jpg"
+}
+```
+
+응답 데이터 예시:
+
+```json
+{
+  "productId": 12,
+  "name": "유기농 감자 5kg",
+  "description": "해남 햇감자입니다.",
+  "category": "AGRICULTURE",
+  "price": 22000,
+  "stockQuantity": 12,
+  "status": "ON_SALE",
+  "imageUrl": "https://cdn.example.com/potato.jpg",
+  "deletedAt": null
+}
+```
+
 ### 6.4 내 상품 목록 조회
 
 - `GET /api/v1/seller/products`
@@ -409,6 +438,41 @@
 - 본인 상품 소유 `SELLER`
 - CSRF 토큰 필요
 
+설명:
+
+- 수정은 부분 수정이 아니라 전체 필드 교체 방식이다.
+- soft delete된 상품은 수정할 수 없으며 `404 Not Found`로 응답한다.
+- 타인 소유 상품 수정 요청은 `403 Forbidden`과 `AUTH_FORBIDDEN`으로 응답한다.
+
+요청 예시:
+
+```json
+{
+  "name": "완도 활전복 1kg",
+  "description": "완도 산지 직송 상품입니다.",
+  "category": "FISHERY",
+  "price": 45000,
+  "stockQuantity": 0,
+  "imageUrl": "https://cdn.example.com/abalone.jpg"
+}
+```
+
+응답 데이터 예시:
+
+```json
+{
+  "productId": 12,
+  "name": "완도 활전복 1kg",
+  "description": "완도 산지 직송 상품입니다.",
+  "category": "FISHERY",
+  "price": 45000,
+  "stockQuantity": 0,
+  "status": "SOLD_OUT",
+  "imageUrl": "https://cdn.example.com/abalone.jpg",
+  "deletedAt": null
+}
+```
+
 ### 6.6 상품 삭제
 
 - `DELETE /api/v1/products/{productId}`
@@ -420,6 +484,19 @@
 - 상품 삭제는 hard delete가 아니라 soft delete로 처리한다.
 - soft delete된 상품은 공개 상품 목록/상세, 장바구니 담기, 바로 구매, 체크아웃 대상에서 제외한다.
 - 기존 주문 이력 조회를 위해 상품 레코드는 DB에 유지한다.
+- soft delete된 상품은 다시 삭제할 수 없으며 `404 Not Found`로 응답한다.
+- 타인 소유 상품 삭제 요청은 `403 Forbidden`과 `AUTH_FORBIDDEN`으로 응답한다.
+
+응답 데이터 예시:
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": null
+}
+```
 
 ## 7. 장바구니 API
 
