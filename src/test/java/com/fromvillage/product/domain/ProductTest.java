@@ -215,4 +215,67 @@ class ProductTest {
         assertThat(product.getName()).isEqualTo("감자");
         assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
     }
+
+    @Test
+    @DisplayName("재고를 차감해 0이 되면 상태가 SOLD_OUT로 변경된다")
+    void decreaseStockChangesStatusToSoldOut() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                3,
+                "https://cdn.example.com/potato.jpg"
+        );
+        product.decreaseStock(3);
+
+        assertThat(product.getStockQuantity()).isEqualTo(0);
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
+    }
+
+    @Test
+    @DisplayName("재고를 복구해 1 이상이 되면 상태가 ON_SALE로 변경된다")
+    void restoreStockChangesStatusToOnSale() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                0,
+                "https://cdn.example.com/potato.jpg"
+        );
+        product.restoreStock(2);
+
+        assertThat(product.getStockQuantity()).isEqualTo(2);
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @Test
+    @DisplayName("soft delete 이후 isDeleted는 true를 반환한다")
+    void isDeletedReturnsTrueAfterSoftDelete() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        Product product = Product.create(
+            seller,
+            "감자",
+            "해남 햇감자",
+            ProductCategory.AGRICULTURE,
+            12000L,
+            5,
+            "https://cdn.example.com/potato.jpg"
+        );
+
+        product.softDelete(LocalDateTime.of(2026, 3, 10, 12, 0));
+
+        assertThat(product.isDeleted()).isTrue();
+    }
 }

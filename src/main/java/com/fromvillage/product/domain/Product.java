@@ -124,7 +124,7 @@ public class Product extends BaseTimeEntity {
         this.price = requirePrice(price);
         this.stockQuantity = requireStockQuantity(stockQuantity);
         this.imageUrl = requireHttpsImageUrl(imageUrl);
-        this.status = stockQuantity == 0 ? ProductStatus.SOLD_OUT : ProductStatus.ON_SALE;
+        recalculateStatus();
     }
 
     public void assertOwnedBy(Long sellerId) {
@@ -135,6 +135,32 @@ public class Product extends BaseTimeEntity {
 
     public void softDelete(LocalDateTime deletedAt) {
         this.deletedAt = Objects.requireNonNull(deletedAt);
+    }
+
+    public void decreaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+        }
+        if (this.stockQuantity - quantity < 0) {
+            throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+        }
+        this.stockQuantity -= quantity;
+        recalculateStatus();
+    }
+
+    public void restoreStock(int quantity) {
+        if (quantity <= 0) {
+            throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+        }
+        this.stockQuantity += quantity;
+        recalculateStatus();
+    }
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    private void recalculateStatus() {
+        this.status = this.stockQuantity == 0 ? ProductStatus.SOLD_OUT : ProductStatus.ON_SALE;
     }
 
     private static User requireSeller(User seller) {
