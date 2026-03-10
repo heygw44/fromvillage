@@ -58,8 +58,8 @@ class ProductRepositoryTest {
     }
 
     @Test
-    @DisplayName("판매자 기준으로 상품을 페이지 조회할 수 있다")
-    void findAllBySellerId() {
+    @DisplayName("판매자 기준으로 삭제된 상품 포함하여 페이지 조회할 수 있다")
+    void findAllBySellerIdIncludingDeleted() {
         User seller = createSeller("seller1@example.com", "seller1");
         User otherSeller = createSeller("seller2@example.com", "seller2");
         productStore.save(Product.create(
@@ -71,7 +71,7 @@ class ProductRepositoryTest {
                 5,
                 "https://cdn.example.com/potato.jpg"
         ));
-        productStore.save(Product.create(
+        Product deletedProduct = productStore.save(Product.create(
                 seller,
                 "배추",
                 "제주 월동배추",
@@ -80,6 +80,8 @@ class ProductRepositoryTest {
                 0,
                 "https://cdn.example.com/cabbage.jpg"
         ));
+        deletedProduct.softDelete(java.time.LocalDateTime.of(2026, 3, 10, 12, 0));
+        productStore.save(deletedProduct);
         productStore.save(Product.create(
                 otherSeller,
                 "멸치",
@@ -99,6 +101,10 @@ class ProductRepositoryTest {
         assertThat(page.getContent())
                 .extracting(Product::getName)
                 .containsExactly("감자", "배추");
+        assertThat(page.getContent())
+                .filteredOn(Product::isDeleted)
+                .extracting(Product::getName)
+                .containsExactly("배추");
     }
 
     @Test

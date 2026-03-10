@@ -68,7 +68,7 @@ public class ProductManageService {
 
     private Product getActiveProduct(Long productId) {
         return productStore.findById(productId)
-                .filter(product -> product.getDeletedAt() == null)
+                .filter(product -> !product.isDeleted())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 }
