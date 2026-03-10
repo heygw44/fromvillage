@@ -290,6 +290,106 @@ class ProductManagementIntegrationTest {
                 .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
     }
 
+    @Test
+    @DisplayName("타인 상품 삭제는 거절된다")
+    void deleteOtherSellersProductIsRejected() throws Exception {
+        User owner = userRepository.saveAndFlush(createSeller("owner@example.com", "원주인"));
+        userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        Product product = productRepository.saveAndFlush(Product.create(
+                owner,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                8,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        Cookie sellerSession = login("seller@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(sellerSession);
+
+        mockMvc.perform(delete("/api/v1/products/{productId}", product.getId())
+                        .cookie(sellerSession)
+                        .header(csrfSession.headerName(), csrfSession.token()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("상품 가격이 0 이하이면 요청 단계에서 거절된다")
+    void createProductRejectsNonPositivePriceAtRequestLayer() throws Exception {
+        userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+
+        Cookie sellerSession = login("seller@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(sellerSession);
+
+        mockMvc.perform(post("/api/v1/products")
+                        .cookie(sellerSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "유기농 감자 5kg",
+                                "description", "해남 햇감자",
+                                "category", "AGRICULTURE",
+                                "price", 0,
+                                "stockQuantity", 8,
+                                "imageUrl", "https://cdn.example.com/potato.jpg"
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].reason").value("상품 가격은 1원 이상이어야 합니다."));
+    }
+
+    @Test
+    @DisplayName("재고 수량이 0 미만이면 요청 단계에서 거절된다")
+    void createProductRejectsNegativeStockQuantityAtRequestLayer() throws Exception {
+        userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+
+        Cookie sellerSession = login("seller@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(sellerSession);
+
+        mockMvc.perform(post("/api/v1/products")
+                        .cookie(sellerSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "유기농 감자 5kg",
+                                "description", "해남 햇감자",
+                                "category", "AGRICULTURE",
+                                "price", 22000,
+                                "stockQuantity", -1,
+                                "imageUrl", "https://cdn.example.com/potato.jpg"
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].reason").value("재고 수량은 0 이상이어야 합니다."));
+    }
+
+    @Test
+    @DisplayName("잘못된 카테고리 값은 요청 단계에서 거절된다")
+    void createProductRejectsInvalidCategory() throws Exception {
+        userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+
+        Cookie sellerSession = login("seller@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(sellerSession);
+
+        mockMvc.perform(post("/api/v1/products")
+                        .cookie(sellerSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "유기농 감자 5kg",
+                                "description", "해남 햇감자",
+                                "category", "FRUIT",
+                                "price", 22000,
+                                "stockQuantity", 8,
+                                "imageUrl", "https://cdn.example.com/potato.jpg"
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].reason").value("요청 본문을 읽을 수 없습니다."));
+    }
+
     private User createSeller(String email, String nickname) {
         User seller = User.createUser(email, passwordEncoder.encode("Password12!"), nickname);
         seller.approveSeller(LocalDateTime.of(2026, 3, 9, 0, 0));
