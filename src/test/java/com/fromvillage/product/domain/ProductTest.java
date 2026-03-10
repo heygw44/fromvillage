@@ -5,6 +5,9 @@ import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.user.domain.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -130,5 +133,86 @@ class ProductTest {
         )).isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+    }
+
+    @Test
+    @DisplayName("상품 수정은 필드를 교체하고 재고에 따라 상태를 다시 계산한다")
+    void updateProductChangesFieldsAndStatus() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                5,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        product.update(
+                "완도 활전복 1kg",
+                "완도 산지 직송",
+                ProductCategory.FISHERY,
+                45000L,
+                0,
+                "https://cdn.example.com/abalone.jpg"
+        );
+
+        assertThat(product.getName()).isEqualTo("완도 활전복 1kg");
+        assertThat(product.getDescription()).isEqualTo("완도 산지 직송");
+        assertThat(product.getCategory()).isEqualTo(ProductCategory.FISHERY);
+        assertThat(product.getPrice()).isEqualTo(45000L);
+        assertThat(product.getStockQuantity()).isEqualTo(0);
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
+        assertThat(product.getImageUrl()).isEqualTo("https://cdn.example.com/abalone.jpg");
+    }
+
+    @Test
+    @DisplayName("타인 소유 상품 수정은 AUTH_FORBIDDEN을 반환한다")
+    void assertOwnedByRejectsNonOwner() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+        User otherSeller = User.createUser("other@example.com", "encoded-password", "other");
+        otherSeller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+        ReflectionTestUtils.setField(seller, "id", 1L);
+        ReflectionTestUtils.setField(otherSeller, "id", 2L);
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                5,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        assertThatThrownBy(() -> product.assertOwnedBy(otherSeller.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.AUTH_FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("상품 삭제는 deletedAt만 기록하는 soft delete다")
+    void softDeleteMarksDeletedAt() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                5,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        LocalDateTime deletedAt = LocalDateTime.of(2026, 3, 10, 12, 0);
+        product.softDelete(deletedAt);
+
+        assertThat(product.getDeletedAt()).isEqualTo(deletedAt);
+        assertThat(product.getName()).isEqualTo("감자");
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
     }
 }

@@ -110,6 +110,33 @@ public class Product extends BaseTimeEntity {
         return new Product(seller, name, description, category, price, stockQuantity, imageUrl, defaultStatus);
     }
 
+    public void update(
+            String name,
+            String description,
+            ProductCategory category,
+            Long price,
+            Integer stockQuantity,
+            String imageUrl
+    ) {
+        this.name = Objects.requireNonNull(name);
+        this.description = Objects.requireNonNull(description);
+        this.category = Objects.requireNonNull(category);
+        this.price = requirePrice(price);
+        this.stockQuantity = requireStockQuantity(stockQuantity);
+        this.imageUrl = requireHttpsImageUrl(imageUrl);
+        this.status = stockQuantity == 0 ? ProductStatus.SOLD_OUT : ProductStatus.ON_SALE;
+    }
+
+    public void assertOwnedBy(Long sellerId) {
+        if (!Objects.equals(this.seller.getId(), sellerId)) {
+            throw new BusinessException(ErrorCode.AUTH_FORBIDDEN);
+        }
+    }
+
+    public void softDelete(LocalDateTime deletedAt) {
+        this.deletedAt = Objects.requireNonNull(deletedAt);
+    }
+
     private static User requireSeller(User seller) {
         User owner = Objects.requireNonNull(seller);
         if (owner.getRole() != UserRole.SELLER) {
