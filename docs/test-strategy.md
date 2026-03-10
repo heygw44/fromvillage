@@ -79,7 +79,8 @@
 - 상품 `imageUrl`의 `https` 검증 및 서버 비-fetch 정책 검증
 - 공개 상품 목록 조회의 `keyword`, `category`, `sort`, 페이지네이션 계약 검증
 - 공개 상품 목록 조회의 `size` 상한 검증
-- soft delete된 상품이 공개 조회와 신규 주문 흐름에서 제외되는지 검증
+- soft delete된 상품이 공개 조회에서 제외되는지 검증
+- soft delete된 상품의 신규 주문 흐름 제외는 후속 장바구니/주문 이슈에서 같은 계약으로 검증
 - soft delete된 상품 상세 조회가 `404 Not Found`로 응답하는지 검증
 - SELLER 상품 등록/수정/삭제 API의 성공 계약 검증
 - SELLER 본인 상품 목록 조회가 soft delete 상품을 포함하고 `deletedAt`을 노출하는지 검증
@@ -141,8 +142,9 @@
 - 단위: 상품 수정 시 상태 재계산, 소유권 검증, soft delete 규칙 검증
 - 단위: 재고 차감 시 `SOLD_OUT`, 재고 복구 시 `ON_SALE` 상태 전이 검증
 - 단위: 상품 가격(`price > 0`)과 재고(`stockQuantity >= 0`) 범위 검증
-- 저장소: 상품 저장/단건 조회, 판매자 기준 페이지 조회, 상품 연관관계 및 auditing 필드 영속화 검증
-- 통합: SELLER 상품 등록/수정/삭제, SELLER 본인 상품 목록 조회, 체크아웃 API, 바로구매 API, 판매자별 주문 분리
+- 저장소: 상품 저장/단건 조회, soft delete 포함 판매자 페이지 조회, 공개 조회용 soft delete 제외, 상품 연관관계 및 auditing 필드 영속화 검증
+- 통합: 상품 범위에서는 SELLER 상품 등록/수정/삭제, SELLER 본인 상품 목록 조회, 공개 목록/상세 조회 계약을 검증
+- 통합: 체크아웃 API, 바로구매 API, 판매자별 주문 분리는 후속 주문 이슈에서 검증
 
 ### 쿠폰
 
