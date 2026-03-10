@@ -11,5 +11,5 @@ public interface ProductStore {
 
     Optional<Product> findById(Long productId);
 
-    Page<Product> findAllBySellerId(Long sellerId, Pageable pageable);
+    Page<Product> findAllBySellerIdIncludingDeleted(Long sellerId, Pageable pageable);
 }

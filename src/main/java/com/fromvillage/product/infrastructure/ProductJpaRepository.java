@@ -12,7 +12,15 @@ import java.util.Optional;
 
 public interface ProductJpaRepository extends JpaRepository<Product, Long> {
 
-    Page<Product> findAllBySellerId(Long sellerId, Pageable pageable);
+    @Query("""
+            select p
+            from Product p
+            where p.seller.id = :sellerId
+            """)
+    Page<Product> findSellerProductsIncludingDeleted(
+            @Param("sellerId") Long sellerId,
+            Pageable pageable
+    );
 
     @Query("""
             select p

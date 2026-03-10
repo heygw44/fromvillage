@@ -142,7 +142,7 @@ public class Product extends BaseTimeEntity {
             throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
         }
         if (this.stockQuantity - quantity < 0) {
-            throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+            throw new BusinessException(ErrorCode.PRODUCT_STOCK_INSUFFICIENT);
         }
         this.stockQuantity -= quantity;
         recalculateStatus();
@@ -152,9 +152,14 @@ public class Product extends BaseTimeEntity {
         if (quantity <= 0) {
             throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
         }
-        this.stockQuantity += quantity;
+        try {
+            this.stockQuantity = Math.addExact(this.stockQuantity, quantity);
+        } catch (ArithmeticException exception) {
+            throw new BusinessException(ErrorCode.PRODUCT_STOCK_QUANTITY_OVERFLOW);
+        }
         recalculateStatus();
     }
+
     public boolean isDeleted() {
         return this.deletedAt != null;
     }

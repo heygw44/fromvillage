@@ -238,6 +238,55 @@ class ProductTest {
     }
 
     @Test
+    @DisplayName("재고보다 많이 차감하면 PRODUCT_STOCK_INSUFFICIENT를 반환한다")
+    void decreaseStockRejectsInsufficientStock() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                2,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        assertThatThrownBy(() -> product.decreaseStock(3))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_INSUFFICIENT);
+    }
+
+    @Test
+    @DisplayName("0 이하 재고 차감 요청은 PRODUCT_STOCK_QUANTITY_INVALID를 반환한다")
+    void decreaseStockRejectsNonPositiveQuantity() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                2,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        assertThatThrownBy(() -> product.decreaseStock(0))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+
+        assertThatThrownBy(() -> product.decreaseStock(-1))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+    }
+
+    @Test
     @DisplayName("재고를 복구해 1 이상이 되면 상태가 ON_SALE로 변경된다")
     void restoreStockChangesStatusToOnSale() {
         User seller = User.createUser("seller@example.com", "encoded-password", "seller");
@@ -256,6 +305,55 @@ class ProductTest {
 
         assertThat(product.getStockQuantity()).isEqualTo(2);
         assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @Test
+    @DisplayName("0 이하 재고 복구 요청은 PRODUCT_STOCK_QUANTITY_INVALID를 반환한다")
+    void restoreStockRejectsNonPositiveQuantity() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                0,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        assertThatThrownBy(() -> product.restoreStock(0))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+
+        assertThatThrownBy(() -> product.restoreStock(-1))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_QUANTITY_INVALID);
+    }
+
+    @Test
+    @DisplayName("재고 복구 중 정수 범위를 초과하면 PRODUCT_STOCK_QUANTITY_OVERFLOW를 반환한다")
+    void restoreStockRejectsOverflow() {
+        User seller = User.createUser("seller@example.com", "encoded-password", "seller");
+        seller.approveSeller(LocalDateTime.of(2026, 3, 9, 10, 0));
+
+        Product product = Product.create(
+                seller,
+                "감자",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                12000L,
+                Integer.MAX_VALUE,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        assertThatThrownBy(() -> product.restoreStock(1))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_QUANTITY_OVERFLOW);
     }
 
     @Test

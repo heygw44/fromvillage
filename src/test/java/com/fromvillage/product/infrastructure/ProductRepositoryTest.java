@@ -90,7 +90,7 @@ class ProductRepositoryTest {
                 "https://cdn.example.com/anchovy.jpg"
         ));
 
-        var page = productStore.findAllBySellerId(
+        var page = productStore.findAllBySellerIdIncludingDeleted(
                 seller.getId(),
                 PageRequest.of(0, 10, Sort.by("createdAt").ascending())
         );

@@ -6,8 +6,6 @@ import com.fromvillage.product.application.ProductSellerPage;
 import com.fromvillage.product.application.ProductSellerQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +21,7 @@ public class ProductSellerQueryController {
     @GetMapping
     public ApiResponse<ProductSellerPageResponse> getSellerProducts(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            Pageable pageable
     ) {
         ProductSellerPage result = productSellerQueryService.getSellerProducts(
                 authenticatedUser.getUserId(),

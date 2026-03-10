@@ -26,7 +26,7 @@ public class ProductStoreJpaAdapter implements ProductStore {
     }
 
     @Override
-    public Page<Product> findAllBySellerId(Long sellerId, Pageable pageable) {
-        return productJpaRepository.findAllBySellerId(sellerId, pageable);
+    public Page<Product> findAllBySellerIdIncludingDeleted(Long sellerId, Pageable pageable) {
+        return productJpaRepository.findSellerProductsIncludingDeleted(sellerId, pageable);
     }
 }

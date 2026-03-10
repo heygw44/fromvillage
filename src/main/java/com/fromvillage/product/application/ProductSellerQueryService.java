@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProductSellerQueryService {
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
     private final ProductStore productStore;
 
     @PreAuthorize("hasRole('SELLER')")
@@ -20,7 +22,7 @@ public class ProductSellerQueryService {
     public ProductSellerPage getSellerProducts(Long sellerId, Pageable pageable) {
         var pageRequest = normalize(pageable);
 
-        var page = productStore.findAllBySellerId(sellerId, pageRequest)
+        var page = productStore.findAllBySellerIdIncludingDeleted(sellerId, pageRequest)
                 .map(ProductSellerSummary::from);
 
         return ProductSellerPage.from(page);
@@ -28,17 +30,13 @@ public class ProductSellerQueryService {
 
     private Pageable normalize(Pageable pageable) {
         if (pageable == null || pageable.isUnpaged()) {
-            return PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+            return PageRequest.of(0, DEFAULT_PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
         }
 
-        if (pageable.getSort().isUnsorted()) {
-            return PageRequest.of(
-                    pageable.getPageNumber(),
-                    pageable.getPageSize(),
-                    Sort.by(Sort.Direction.DESC, "createdAt")
-            );
-        }
+        Sort sort = pageable.getSort().isSorted()
+                ? pageable.getSort()
+                : Sort.by(Sort.Direction.DESC, "createdAt");
 
-        return pageable;
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
     }
 }

@@ -37,7 +37,7 @@ public record ProductSellerPageResponse(
             String status,
             LocalDateTime deletedAt
     ) {
-        static ProductSellerSummaryResponse from(ProductSellerSummary summary) {
+        public static ProductSellerSummaryResponse from(ProductSellerSummary summary) {
             return new ProductSellerSummaryResponse(
                     summary.productId(),
                     summary.name(),
