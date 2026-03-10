@@ -127,6 +127,7 @@ MVP에서는 remember-me 자동 로그인 기능은 포함하지 않는다.
 - 상품 이미지 URL은 `https`만 허용하고, 서버는 외부 `imageUrl`을 직접 fetch하지 않는다.
 - 상품 삭제는 hard delete가 아니라 soft delete로 처리해 과거 주문 이력의 참조 무결성을 유지한다.
 - soft delete된 상품은 공개 목록/상세 API에서 숨기고, 공개 상세 조회 요청에는 `404 Not Found`를 반환한다.
+- SELLER 관리 조회는 별도 경계로 두며, 본인 상품 목록에서는 soft delete된 상품도 `deletedAt`과 함께 확인할 수 있다.
 
 참고:
 - [Spring Security Getting Started](https://docs.spring.io/spring-security/reference/servlet/getting-started.html)
