@@ -75,6 +75,11 @@ class CartIntegrationTest {
                 passwordEncoder.encode("Password12!"),
                 "구매자"
         ));
+        User otherUser = userRepository.saveAndFlush(User.createUser(
+                "other@example.com",
+                passwordEncoder.encode("Password12!"),
+                "다른구매자"
+        ));
 
         Product activeProduct = productRepository.saveAndFlush(Product.create(
                 seller,
@@ -107,10 +112,20 @@ class CartIntegrationTest {
                 0,
                 "https://cdn.example.com/potato-premium.jpg"
         ));
+        Product otherUserProduct = productRepository.saveAndFlush(Product.create(
+                seller,
+                "사과 3kg",
+                "청송 사과",
+                ProductCategory.AGRICULTURE,
+                15000L,
+                8,
+                "https://cdn.example.com/apple.jpg"
+        ));
 
         cartRepository.saveAndFlush(CartItem.create(user, activeProduct, 2));
         cartRepository.saveAndFlush(CartItem.create(user, deletedProduct, 1));
         cartRepository.saveAndFlush(CartItem.create(user, soldOutProduct, 1));
+        cartRepository.saveAndFlush(CartItem.create(otherUser, otherUserProduct, 3));
 
         Cookie userSession = login("user@example.com", "Password12!");
 
@@ -123,6 +138,7 @@ class CartIntegrationTest {
                 .andExpect(jsonPath("$.data.items[0].productId").value(activeProduct.getId()))
                 .andExpect(jsonPath("$.data.items[0].productName").value("유기농 감자 5kg"))
                 .andExpect(jsonPath("$.data.items[0].quantity").value(2))
+                .andExpect(jsonPath("$.data.items[?(@.productId == %s)]", otherUserProduct.getId()).isEmpty())
                 .andExpect(jsonPath("$.data.totalItemCount").value(1))
                 .andExpect(jsonPath("$.data.totalQuantity").value(2))
                 .andExpect(jsonPath("$.data.totalAmount").value(44000));
@@ -662,6 +678,43 @@ class CartIntegrationTest {
     }
 
     @Test
+    @DisplayName("품절 상품은 장바구니에 담을 수 없다")
+    void addCartItemRejectsSoldOutProduct() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product soldOutProduct = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                5,
+                "https://cdn.example.com/potato.jpg"
+        ));
+        soldOutProduct.decreaseStock(5);
+        productRepository.saveAndFlush(soldOutProduct);
+
+        Cookie userSession = login("user@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/cart-items")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", soldOutProduct.getId(),
+                                "quantity", 2
+                        ))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"));
+    }
+
+    @Test
     @DisplayName("품절 상품은 장바구니 수량을 수정할 수 없다")
     void updateCartItemRejectsSoldOutProduct() throws Exception {
         User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
@@ -699,9 +752,43 @@ class CartIntegrationTest {
                 .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"));
     }
 
+    @Test
+    @DisplayName("soft delete 상품은 장바구니 수량을 수정할 수 없다")
+    void updateCartItemRejectsDeletedProduct() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User user = userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
 
+        Product deletedProduct = productRepository.saveAndFlush(Product.create(
+                seller,
+                "손질 고등어",
+                "당일 손질",
+                ProductCategory.FISHERY,
+                18000L,
+                5,
+                "https://cdn.example.com/mackerel.jpg"
+        ));
 
+        CartItem cartItem = cartRepository.saveAndFlush(CartItem.create(user, deletedProduct, 1));
+        deletedProduct.softDelete(LocalDateTime.now());
+        productRepository.saveAndFlush(deletedProduct);
 
+        Cookie userSession = login("user@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(patch("/api/v1/cart-items/{cartItemId}", cartItem.getId())
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "quantity", 3
+                        ))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"));
+    }
 
     private User createSeller(String email, String nickname) {
         User seller = User.createUser(
