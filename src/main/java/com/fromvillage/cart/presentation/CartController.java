@@ -56,7 +56,7 @@ public class CartController {
     }
 
     @DeleteMapping("/{cartItemId}")
-    public ApiResponse<CartItemResponse> deleteCartItem(
+    public ApiResponse<Void> deleteCartItem(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @PathVariable Long cartItemId
     ) {

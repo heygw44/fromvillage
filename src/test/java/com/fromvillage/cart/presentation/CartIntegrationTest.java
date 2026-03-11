@@ -301,7 +301,45 @@ class CartIntegrationTest {
                         ))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("CART_QUANTITY_INVALID"));
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("quantity"));
+    }
+
+    @Test
+    @DisplayName("장바구니 담기 시 수량이 1 미만이면 VALIDATION_ERROR를 반환한다")
+    void addCartItemRejectsInvalidQuantity() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        userRepository.saveAndFlush(User.createUser(
+                "user@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product product = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        Cookie userSession = login("user@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/cart-items")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", product.getId(),
+                                "quantity", 0
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("quantity"));
     }
 
     @Test

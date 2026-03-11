@@ -581,7 +581,7 @@
 - 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
 - CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
 - soft delete 또는 판매 불가 상품은 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
-- 수량이 1 미만이면 `400 Bad Request` + `CART_QUANTITY_INVALID`
+- 수량이 1 미만이면 `400 Bad Request` + `VALIDATION_ERROR`
 
 ### 7.3 장바구니 수량 수정
 
@@ -624,7 +624,7 @@
 - 존재하지 않는 장바구니 항목은 `404 Not Found` + `CART_ITEM_NOT_FOUND`
 - 타인 장바구니 항목은 `403 Forbidden` + `AUTH_FORBIDDEN`
 - soft delete 또는 판매 불가 상품은 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
-- 수량이 1 미만이면 `400 Bad Request` + `CART_QUANTITY_INVALID`
+- 수량이 1 미만이면 `400 Bad Request` + `VALIDATION_ERROR`
 
 ### 7.4 장바구니 삭제
 
