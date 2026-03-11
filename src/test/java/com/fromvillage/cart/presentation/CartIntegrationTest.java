@@ -98,8 +98,19 @@ class CartIntegrationTest {
         deletedProduct.softDelete(LocalDateTime.now());
         productRepository.saveAndFlush(deletedProduct);
 
+        Product soldOutProduct = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 10kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                39000L,
+                0,
+                "https://cdn.example.com/potato-premium.jpg"
+        ));
+
         cartRepository.saveAndFlush(CartItem.create(user, activeProduct, 2));
         cartRepository.saveAndFlush(CartItem.create(user, deletedProduct, 1));
+        cartRepository.saveAndFlush(CartItem.create(user, soldOutProduct, 1));
 
         Cookie userSession = login("user@example.com", "Password12!");
 
