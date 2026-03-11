@@ -20,8 +20,18 @@ public class CartStoreJpaAdapter implements CartStore {
     }
 
     @Override
+    public void delete(CartItem cartItem) {
+        cartJpaRepository.delete(cartItem);
+    }
+
+    @Override
+    public Optional<CartItem> findById(Long cartItemId) {
+        return cartJpaRepository.findByIdWithProductAndSeller(cartItemId);
+    }
+
+    @Override
     public Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId) {
-        return cartJpaRepository.findByUserIdAndProductId(userId, productId);
+        return cartJpaRepository.findByUserIdAndProductIdWithProductAndSeller(userId, productId);
     }
 
     @Override

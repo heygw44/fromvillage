@@ -2,6 +2,7 @@ package com.fromvillage.product.presentation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fromvillage.cart.infrastructure.CartJpaRepository;
 import com.fromvillage.product.domain.Product;
 import com.fromvillage.product.domain.ProductCategory;
 import com.fromvillage.support.TestContainersConfig;
@@ -60,6 +61,9 @@ class ProductManagementIntegrationTest {
         private com.fromvillage.product.infrastructure.ProductJpaRepository productRepository;
 
         @Autowired
+        private CartJpaRepository cartRepository;
+
+        @Autowired
         private PasswordEncoder passwordEncoder;
 
         @Autowired
@@ -67,6 +71,7 @@ class ProductManagementIntegrationTest {
 
         @BeforeEach
         void setUp() {
+                cartRepository.deleteAll();
                 productRepository.deleteAll();
                 userRepository.deleteAll();
                 clock.reset(Instant.parse("2026-03-10T00:00:00Z"));
