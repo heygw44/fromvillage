@@ -677,11 +677,13 @@ class CartIntegrationTest {
                 "해남 햇감자",
                 ProductCategory.AGRICULTURE,
                 22000L,
-                0,
+                5,
                 "https://cdn.example.com/potato.jpg"
         ));
 
         CartItem cartItem = cartRepository.saveAndFlush(CartItem.create(user, soldOutProduct, 1));
+        soldOutProduct.decreaseStock(5);
+        productRepository.saveAndFlush(soldOutProduct);
 
         Cookie userSession = login("user@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(userSession);
