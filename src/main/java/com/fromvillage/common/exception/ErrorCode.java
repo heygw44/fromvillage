@@ -20,6 +20,7 @@ public enum ErrorCode {
     PRODUCT_STOCK_INSUFFICIENT(HttpStatus.CONFLICT, "PRODUCT_STOCK_INSUFFICIENT", "상품 재고가 부족합니다."),
     PRODUCT_STOCK_QUANTITY_OVERFLOW(HttpStatus.BAD_REQUEST, "PRODUCT_STOCK_QUANTITY_OVERFLOW", "상품 재고 범위를 초과했습니다."),
     PRODUCT_IMAGE_URL_INVALID(HttpStatus.BAD_REQUEST, "PRODUCT_IMAGE_URL_INVALID", "상품 이미지는 https 주소만 사용할 수 있습니다."),
+    CART_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "CART_QUANTITY_INVALID", "장바구니 수량은 1개 이상이어야 합니다."),
     COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_INTERNAL_ERROR", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
 
     private final HttpStatus status;
