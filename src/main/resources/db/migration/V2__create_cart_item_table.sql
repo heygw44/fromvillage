@@ -11,5 +11,7 @@ CREATE TABLE cart_item (
                            CONSTRAINT fk_cart_item_product
                                FOREIGN KEY (product_id) REFERENCES products (id),
                            CONSTRAINT uk_cart_item_user_product
-                               UNIQUE (user_id, product_id)
+                               UNIQUE (user_id, product_id),
+                           CONSTRAINT ck_cart_item_quantity
+                               CHECK (quantity >= 1)
 );

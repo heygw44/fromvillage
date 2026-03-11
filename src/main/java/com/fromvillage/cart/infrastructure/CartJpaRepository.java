@@ -11,6 +11,12 @@ public interface CartJpaRepository extends JpaRepository<CartItem, Long> {
 
     Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId);
 
+    @Query("""
+            select cartItem
+            from CartItem cartItem
+            join fetch cartItem.product product
+            where cartItem.user.id = :userId
+            """)
     List<CartItem> findAllByUserId(Long userId);
 
     @Query("""

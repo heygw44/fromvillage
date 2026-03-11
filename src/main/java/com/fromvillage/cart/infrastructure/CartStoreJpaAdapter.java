@@ -16,7 +16,7 @@ public class CartStoreJpaAdapter implements CartStore {
 
     @Override
     public CartItem save(CartItem cartItem) {
-        return cartJpaRepository.saveAndFlush(cartItem);
+        return cartJpaRepository.save(cartItem);
     }
 
     @Override
