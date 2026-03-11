@@ -511,11 +511,45 @@
 - `GET /api/v1/cart-items`
 - 인증 필요
 
+설명:
+
+- `USER`만 사용할 수 있다.
+- 현재 주문 가능한 장바구니 항목만 반환한다.
+- soft delete 상품과 `SOLD_OUT` 상품은 조회 결과에서 제외한다.
+
+응답 데이터 예시:
+
+```json
+{
+  "items": [
+    {
+      "cartItemId": 1,
+      "productId": 10,
+      "sellerId": 3,
+      "productName": "유기농 감자 5kg",
+      "imageUrl": "https://cdn.example.com/potato.jpg",
+      "price": 22000,
+      "quantity": 2,
+      "lineAmount": 44000
+    }
+  ],
+  "totalItemCount": 1,
+  "totalQuantity": 2,
+  "totalAmount": 44000
+}
+```
+
 ### 7.2 장바구니 담기
 
 - `POST /api/v1/cart-items`
 - 인증 필요
 - CSRF 토큰 필요
+
+설명:
+
+- `USER`만 사용할 수 있다.
+- 같은 `productId`가 이미 장바구니에 있으면 새 항목을 만들지 않고 수량을 합산한다.
+- soft delete 상품이나 `SOLD_OUT` 상품은 담을 수 없다.
 
 요청:
 
@@ -526,17 +560,95 @@
 }
 ```
 
+응답 데이터 예시:
+
+```json
+{
+  "cartItemId": 1,
+  "productId": 10,
+  "sellerId": 3,
+  "productName": "유기농 감자 5kg",
+  "imageUrl": "https://cdn.example.com/potato.jpg",
+  "price": 22000,
+  "quantity": 2,
+  "lineAmount": 44000
+}
+```
+
+실패 응답 규칙:
+
+- `SELLER`, `ADMIN` 요청은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
+- soft delete 또는 판매 불가 상품은 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
+- 수량이 1 미만이면 `400 Bad Request` + `CART_QUANTITY_INVALID`
+
 ### 7.3 장바구니 수량 수정
 
 - `PATCH /api/v1/cart-items/{cartItemId}`
 - 인증 필요
 - CSRF 토큰 필요
 
+설명:
+
+- `USER`만 사용할 수 있다.
+- 본인 장바구니 항목만 수정할 수 있다.
+- 타인 장바구니 항목 수정 시 `403 Forbidden` + `AUTH_FORBIDDEN`을 반환한다.
+- soft delete 상품이나 `SOLD_OUT` 상품은 수정할 수 없다.
+
+요청:
+
+```json
+{
+  "quantity": 5
+}
+```
+
+응답 데이터 예시:
+
+```json
+{
+  "cartItemId": 1,
+  "productId": 10,
+  "sellerId": 3,
+  "productName": "유기농 감자 5kg",
+  "imageUrl": "https://cdn.example.com/potato.jpg",
+  "price": 22000,
+  "quantity": 5,
+  "lineAmount": 110000
+}
+```
+
+실패 응답 규칙:
+
+- 존재하지 않는 장바구니 항목은 `404 Not Found` + `CART_ITEM_NOT_FOUND`
+- 타인 장바구니 항목은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- soft delete 또는 판매 불가 상품은 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
+- 수량이 1 미만이면 `400 Bad Request` + `CART_QUANTITY_INVALID`
+
 ### 7.4 장바구니 삭제
 
 - `DELETE /api/v1/cart-items/{cartItemId}`
 - 인증 필요
 - CSRF 토큰 필요
+
+설명:
+
+- `USER`만 사용할 수 있다.
+- 본인 장바구니 항목만 삭제할 수 있다.
+- 타인 장바구니 항목 삭제 시 `403 Forbidden` + `AUTH_FORBIDDEN`을 반환한다.
+
+응답 데이터 예시:
+
+```json
+null
+```
+
+실패 응답 규칙:
+
+- 존재하지 않는 장바구니 항목은 `404 Not Found` + `CART_ITEM_NOT_FOUND`
+- 타인 장바구니 항목은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
 
 ## 8. 주문 API
 

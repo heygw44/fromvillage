@@ -23,8 +23,10 @@ public interface CartJpaRepository extends JpaRepository<CartItem, Long> {
             select cartItem
             from CartItem cartItem
             join fetch cartItem.product product
+            join fetch product.seller seller
             where cartItem.user.id = :userId
               and product.deletedAt is null
+              and product.status = com.fromvillage.product.domain.ProductStatus.ON_SALE
             """)
     List<CartItem> findAllActiveByUserId(Long userId);
 }

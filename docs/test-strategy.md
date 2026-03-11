@@ -147,6 +147,11 @@
 - 저장소: 장바구니 저장/사용자+상품 단건 조회, `(user_id, product_id)` 중복 제약, USER별 목록 조회 검증
 - 저장소: soft delete 상품 제외용 active 장바구니 조회와 auditing 필드 영속화 검증
 - 저장소: 상품 저장/단건 조회, soft delete 포함 판매자 페이지 조회, 공개 조회용 soft delete 제외, 상품 연관관계 및 auditing 필드 영속화 검증
+- 통합: USER 장바구니 조회/담기/수량 수정/삭제 API 계약 검증
+- 통합: 장바구니 담기 시 동일 상품 중복 요청이 수량 합산으로 처리되는지 검증
+- 통합: SELLER/ADMIN/미인증 장바구니 접근 거부와 CSRF 보호 검증
+- 통합: 타인 장바구니 수정/삭제 요청의 `403 + AUTH_FORBIDDEN` 검증
+- 통합: soft delete 상품 담기 실패와 `SOLD_OUT` 상품 수량 수정 실패의 `409 + CART_PRODUCT_UNAVAILABLE` 검증
 - 통합: 상품 범위에서는 SELLER 상품 등록/수정/삭제, SELLER 본인 상품 목록 조회, 공개 목록/상세 조회 계약을 검증
 - 통합: 체크아웃 API, 바로구매 API, 판매자별 주문 분리는 후속 주문 이슈에서 검증
 

@@ -7,6 +7,10 @@ public interface CartStore {
 
     CartItem save(CartItem cartItem);
 
+    void delete(CartItem cartItem);
+
+    Optional<CartItem> findById(Long cartItemId);
+
     Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId);
 
     List<CartItem> findAllByUserId(Long userId);

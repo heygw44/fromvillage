@@ -5,6 +5,7 @@ import com.fromvillage.product.domain.ProductCategory;
 import com.fromvillage.support.TestContainersConfig;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.infrastructure.UserJpaRepository;
+import com.fromvillage.cart.infrastructure.CartJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,8 +42,12 @@ class ProductPublicQueryIntegrationTest {
     @Autowired
     private com.fromvillage.product.infrastructure.ProductJpaRepository productJpaRepository;
 
+    @Autowired
+    private CartJpaRepository cartJpaRepository;
+
     @BeforeEach
     void setUp() {
+        cartJpaRepository.deleteAll();
         productJpaRepository.deleteAll();
         userJpaRepository.deleteAll();
     }
