@@ -177,6 +177,7 @@ MVP에서는 remember-me 자동 로그인 기능은 포함하지 않는다.
 장바구니 체크아웃에서는 요청의 `targetSellerId`를 기준으로 특정 `seller_order` 1건에만 쿠폰을 연결한다.
 바로 구매에서는 `productId`로 SELLER가 단일하게 결정되므로 별도의 `targetSellerId` 없이 해당 `seller_order`에 쿠폰을 연결한다.
 쿠폰 최소 주문 금액 조건은 할인 적용 전 `seller_order.total_amount`를 기준으로 검증한다.
+현재 구현 시점의 주문 모델(`M3-03`)은 `checkout_order`, `seller_order`, `order_item`과 상태 전이/스냅샷 구조까지만 포함하고, `issued_coupon`과 `seller_order`의 물리 연결 컬럼은 `M4-04`에서 추가한다.
 
 이 구조를 통해 빠른 동시성 제어와 영속 데이터 정합성을 함께 확보한다.
 Redis는 동시성 제어의 전면, DB는 최종 기준 데이터 저장소 역할을 맡는다.
@@ -198,6 +199,7 @@ Redis는 동시성 제어의 전면, DB는 최종 기준 데이터 저장소 역
 
 `order_item`은 상품 스냅샷을 저장해, 상품 정보가 변경되거나 soft delete되어도 과거 주문 이력이 흔들리지 않도록 한다.
 `checkout_order` 취소 시에는 하위의 모든 `seller_order`가 함께 취소되어 주문/재고/쿠폰 정합성을 유지한다.
+현재 `M3-03` 단계에서는 쿠폰 연동 전이므로, 주문 모델 자체는 할인 금액 필드와 상태 기반만 준비하고 쿠폰 FK 연결은 후속 이슈에서 닫는다.
 
 ## 10. 정산 배치 아키텍처
 
