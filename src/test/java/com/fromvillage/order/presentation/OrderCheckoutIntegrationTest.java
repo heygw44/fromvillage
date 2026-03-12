@@ -203,6 +203,50 @@ class OrderCheckoutIntegrationTest {
     }
 
     @Test
+    @DisplayName("체크아웃으로 재고가 정확히 0이 되면 상품은 SOLD_OUT으로 전이된다")
+    void checkoutMarksProductSoldOutWhenStockBecomesZero() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product mackerel = productRepository.saveAndFlush(Product.create(
+                seller,
+                "손질 고등어",
+                "당일 손질 고등어",
+                ProductCategory.FISHERY,
+                15000L,
+                3,
+                "https://cdn.example.com/mackerel.jpg"
+        ));
+
+        cartRepository.saveAndFlush(CartItem.create(buyer, mackerel, 3));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/orders/checkout")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.sellerOrderCount").value(1))
+                .andExpect(jsonPath("$.data.totalAmount").value(45000))
+                .andExpect(jsonPath("$.data.finalAmount").value(45000));
+
+        Product soldOutMackerel = productRepository.findById(mackerel.getId()).orElseThrow();
+
+        assertThat(soldOutMackerel.getStockQuantity()).isEqualTo(0);
+        assertThat(soldOutMackerel.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
+        assertThat(cartRepository.findAllByUserId(buyer.getId())).isEmpty();
+    }
+
+    @Test
     @DisplayName("빈 장바구니는 체크아웃할 수 없다")
     void checkoutRejectsEmptyCart() throws Exception {
         userRepository.saveAndFlush(User.createUser(

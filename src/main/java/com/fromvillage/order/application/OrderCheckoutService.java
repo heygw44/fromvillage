@@ -73,21 +73,22 @@ public class OrderCheckoutService {
     }
 
     private CheckoutOrder createCheckoutOrder(User user, List<CartItem> cartItems) {
-        Map<User, List<CartItem>> cartItemsBySeller = cartItems.stream()
+        Map<Long, List<CartItem>> cartItemsBySellerId = cartItems.stream()
                 .collect(Collectors.groupingBy(
-                        cartItem -> cartItem.getProduct().getSeller(),
+                        cartItem -> cartItem.getProduct().getSeller().getId(),
                         LinkedHashMap::new,
                         Collectors.toList()
                 ));
 
-        List<SellerOrder> sellerOrders = cartItemsBySeller.entrySet().stream()
-                .map(entry -> createSellerOrder(entry.getKey(), entry.getValue()))
+        List<SellerOrder> sellerOrders = cartItemsBySellerId.values().stream()
+                .map(this::createSellerOrder)
                 .toList();
 
         return CheckoutOrder.create(user, sellerOrders);
     }
 
-    private SellerOrder createSellerOrder(User seller, List<CartItem> cartItems) {
+    private SellerOrder createSellerOrder(List<CartItem> cartItems) {
+        User seller = cartItems.get(0).getProduct().getSeller();
         List<OrderItem> orderItems = cartItems.stream()
                 .map(cartItem -> OrderItem.create(cartItem.getProduct(), cartItem.getQuantity()))
                 .toList();
