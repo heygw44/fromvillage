@@ -119,12 +119,12 @@ public class CheckoutOrder extends BaseTimeEntity {
     private static Long calculateTotalAmount(List<SellerOrder> sellerOrders) {
         return sellerOrders.stream()
                 .map(SellerOrder::getTotalAmount)
-                .reduce(0L, Long::sum);
+                .reduce(0L, Math::addExact);
     }
 
     private static Long calculateDiscountAmount(List<SellerOrder> sellerOrders) {
         return sellerOrders.stream()
                 .map(SellerOrder::getDiscountAmount)
-                .reduce(0L, Long::sum);
+                .reduce(0L, Math::addExact);
     }
 }

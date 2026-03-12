@@ -49,7 +49,7 @@ public class OrderItem extends BaseTimeEntity {
     @Column(name = "line_amount", nullable = false)
     private Long lineAmount;
 
-    private OrderItem(Product product, Integer quantity) {
+    private OrderItem(Product product, int quantity) {
         Product source = Objects.requireNonNull(product);
         int orderQuantity = requireQuantity(quantity);
 
@@ -60,7 +60,7 @@ public class OrderItem extends BaseTimeEntity {
         this.lineAmount = Math.multiplyExact(this.productPriceSnapshot, orderQuantity);
     }
 
-    public static OrderItem create(Product product, Integer quantity) {
+    public static OrderItem create(Product product, int quantity) {
         return new OrderItem(product, quantity);
     }
 
@@ -68,11 +68,10 @@ public class OrderItem extends BaseTimeEntity {
         this.sellerOrder = Objects.requireNonNull(sellerOrder);
     }
 
-    private static Integer requireQuantity(Integer quantity) {
-        Integer value = Objects.requireNonNull(quantity);
-        if (value < 1) {
+    private static int requireQuantity(int quantity) {
+        if (quantity < 1) {
             throw new BusinessException(ErrorCode.ORDER_ITEM_QUANTITY_INVALID);
         }
-        return value;
+        return quantity;
     }
 }

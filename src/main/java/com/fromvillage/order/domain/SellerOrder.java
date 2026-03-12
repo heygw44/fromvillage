@@ -121,6 +121,6 @@ public class SellerOrder extends BaseTimeEntity {
     private static Long calculateTotalAmount(List<OrderItem> orderItems) {
         return orderItems.stream()
                 .map(OrderItem::getLineAmount)
-                .reduce(0L, Long::sum);
+                .reduce(0L, Math::addExact);
     }
 }

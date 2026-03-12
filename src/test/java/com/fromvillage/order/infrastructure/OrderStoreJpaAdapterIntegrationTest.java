@@ -8,6 +8,7 @@ import com.fromvillage.order.domain.SellerOrder;
 import com.fromvillage.order.domain.SellerOrderStore;
 import com.fromvillage.product.domain.Product;
 import com.fromvillage.product.domain.ProductCategory;
+import com.fromvillage.product.infrastructure.ProductJpaRepository;
 import com.fromvillage.support.TestContainersConfig;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.infrastructure.UserJpaRepository;
@@ -43,7 +44,7 @@ class OrderStoreJpaAdapterIntegrationTest {
     private UserJpaRepository userJpaRepository;
 
     @Autowired
-    private com.fromvillage.product.infrastructure.ProductJpaRepository productJpaRepository;
+    private ProductJpaRepository productJpaRepository;
 
     @Test
     @DisplayName("체크아웃 주문 그래프를 저장하고 seller order, order item까지 함께 조회할 수 있다")
