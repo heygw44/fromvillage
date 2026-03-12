@@ -125,6 +125,25 @@ class CheckoutOrderTest {
     }
 
     @Test
+    @DisplayName("이미 다른 체크아웃 주문에 속한 판매자 주문은 재사용할 수 없다")
+    void createCheckoutOrderRejectsReassigningSellerOrder() {
+        User buyer = User.createUser("buyer@example.com", "encoded-password", "buyer");
+        User anotherBuyer = User.createUser("another-buyer@example.com", "encoded-password", "anotherBuyer");
+        User seller = createSeller("seller@example.com", "seller");
+
+        SellerOrder sellerOrder = SellerOrder.create(
+                seller,
+                List.of(OrderItem.create(createProduct(seller, "감자", 12000L), 2))
+        );
+
+        CheckoutOrder.create(buyer, List.of(sellerOrder));
+
+        assertThatThrownBy(() -> CheckoutOrder.create(anotherBuyer, List.of(sellerOrder)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Seller order is already assigned to another checkout order.");
+    }
+
+    @Test
     @DisplayName("생성 상태가 아닌 체크아웃 주문 완료는 허용하지 않는다")
     void completeCheckoutOrderRejectsInvalidTransition() {
         User buyer = User.createUser("buyer@example.com", "encoded-password", "buyer");

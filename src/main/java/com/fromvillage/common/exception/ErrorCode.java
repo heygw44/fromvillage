@@ -36,6 +36,7 @@ public enum ErrorCode {
     // Order
     ORDER_ITEM_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "ORDER_ITEM_QUANTITY_INVALID", "주문 수량은 1개 이상이어야 합니다."),
     ORDER_ITEMS_REQUIRED(HttpStatus.BAD_REQUEST, "ORDER_ITEMS_REQUIRED", "주문 상품은 1개 이상이어야 합니다."),
+    ORDER_PRODUCT_SELLER_MISMATCH(HttpStatus.BAD_REQUEST, "ORDER_PRODUCT_SELLER_MISMATCH", "판매자 주문에는 해당 판매자의 상품만 포함할 수 있습니다."),
     ORDER_STATUS_TRANSITION_INVALID(HttpStatus.CONFLICT, "ORDER_STATUS_TRANSITION_INVALID", "변경할 수 없는 주문 상태입니다."),
     ORDER_SELLER_ORDERS_REQUIRED(HttpStatus.BAD_REQUEST, "ORDER_SELLER_ORDERS_REQUIRED", "주문에는 판매자 주문이 1개 이상 있어야 합니다."),
 

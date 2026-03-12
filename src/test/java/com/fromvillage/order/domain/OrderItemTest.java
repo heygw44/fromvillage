@@ -56,6 +56,11 @@ class OrderItemTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ORDER_ITEM_QUANTITY_INVALID);
+
+        assertThatThrownBy(() -> OrderItem.create(product, -1))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.ORDER_ITEM_QUANTITY_INVALID);
     }
 
     @Test

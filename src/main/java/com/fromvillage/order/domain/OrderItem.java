@@ -65,7 +65,11 @@ public class OrderItem extends BaseTimeEntity {
     }
 
     void assignSellerOrder(SellerOrder sellerOrder) {
-        this.sellerOrder = Objects.requireNonNull(sellerOrder);
+        SellerOrder parent = Objects.requireNonNull(sellerOrder);
+        if (this.sellerOrder != null && this.sellerOrder != parent) {
+            throw new IllegalStateException("Order item is already assigned to another seller order.");
+        }
+        this.sellerOrder = parent;
     }
 
     private static int requireQuantity(int quantity) {

@@ -37,6 +37,33 @@ class SellerOrderTest {
     }
 
     @Test
+    @DisplayName("판매자 주문에는 같은 판매자의 상품만 담을 수 있다")
+    void createSellerOrderRejectsItemFromAnotherSeller() {
+        User seller = createSeller("seller@example.com", "seller");
+        User anotherSeller = createSeller("another-seller@example.com", "anotherSeller");
+
+        OrderItem foreignItem = OrderItem.create(createProduct(anotherSeller, "배추", 8000L), 1);
+
+        assertThatThrownBy(() -> SellerOrder.create(seller, List.of(foreignItem)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.ORDER_PRODUCT_SELLER_MISMATCH);
+    }
+
+    @Test
+    @DisplayName("이미 다른 판매자 주문에 담긴 주문 아이템은 재사용할 수 없다")
+    void createSellerOrderRejectsReassigningOrderItem() {
+        User seller = createSeller("seller@example.com", "seller");
+        OrderItem orderItem = OrderItem.create(createProduct(seller, "감자", 12000L), 2);
+
+        SellerOrder.create(seller, List.of(orderItem));
+
+        assertThatThrownBy(() -> SellerOrder.create(seller, List.of(orderItem)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Order item is already assigned to another seller order.");
+    }
+
+    @Test
     @DisplayName("판매자 주문을 완료할 수 있다")
     void completeSellerOrder() {
         User seller = createSeller("seller@example.com", "seller");
@@ -100,6 +127,17 @@ class SellerOrderTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ORDER_STATUS_TRANSITION_INVALID);
+    }
+
+    @Test
+    @DisplayName("주문 상품 없이 판매자 주문을 생성할 수 없다")
+    void createSellerOrderRejectsEmptyOrderItems() {
+        User seller = createSeller("seller@example.com", "seller");
+
+        assertThatThrownBy(() -> SellerOrder.create(seller, List.of()))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.ORDER_ITEMS_REQUIRED);
     }
 
     private User createSeller(String email, String nickname) {

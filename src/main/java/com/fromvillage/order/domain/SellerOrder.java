@@ -85,7 +85,11 @@ public class SellerOrder extends BaseTimeEntity {
     }
 
     void assignCheckoutOrder(CheckoutOrder checkoutOrder) {
-        this.checkoutOrder = Objects.requireNonNull(checkoutOrder);
+        CheckoutOrder parent = Objects.requireNonNull(checkoutOrder);
+        if (this.checkoutOrder != null && this.checkoutOrder != parent) {
+            throw new IllegalStateException("Seller order is already assigned to another checkout order.");
+        }
+        this.checkoutOrder = parent;
     }
 
     public void complete(LocalDateTime completedAt) {
@@ -106,8 +110,15 @@ public class SellerOrder extends BaseTimeEntity {
 
     private void addOrderItem(OrderItem orderItem) {
         OrderItem item = Objects.requireNonNull(orderItem);
+        validateSameSeller(item);
         item.assignSellerOrder(this);
         this.orderItems.add(item);
+    }
+
+    private void validateSameSeller(OrderItem orderItem) {
+        if (!Objects.equals(orderItem.getProduct().getSeller(), this.seller)) {
+            throw new BusinessException(ErrorCode.ORDER_PRODUCT_SELLER_MISMATCH);
+        }
     }
 
     private static List<OrderItem> requireOrderItems(List<OrderItem> orderItems) {

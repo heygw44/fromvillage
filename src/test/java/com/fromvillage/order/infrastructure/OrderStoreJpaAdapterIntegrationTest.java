@@ -106,6 +106,7 @@ class OrderStoreJpaAdapterIntegrationTest {
         assertThat(sellerOrders)
                 .extracting(order -> order.getSeller().getEmail())
                 .containsExactlyInAnyOrder("seller1@example.com", "seller2@example.com");
+        assertThat(sellerOrderStore.findAllByCheckoutOrderId(Long.MAX_VALUE)).isEmpty();
     }
 
     @Test
@@ -134,6 +135,7 @@ class OrderStoreJpaAdapterIntegrationTest {
         assertThat(sellerOrders.getFirst().getSeller().getId()).isEqualTo(seller1.getId());
         assertThat(sellerOrders.getFirst().getOrderItems()).hasSize(1);
         assertThat(sellerOrders.getFirst().getOrderItems().getFirst().getProductNameSnapshot()).isEqualTo("감자");
+        assertThat(sellerOrderStore.findAllBySellerId(Long.MAX_VALUE)).isEmpty();
     }
 
     private User createUser(String email, String nickname) {
