@@ -36,7 +36,6 @@ public interface CartJpaRepository extends JpaRepository<CartItem, Long> {
             """)
     List<CartItem> findAllByUserId(Long userId);
 
-    // Keep cart listing aligned with checkout eligibility: only orderable items are exposed here.
     @Query("""
             select cartItem
             from CartItem cartItem
@@ -47,4 +46,14 @@ public interface CartJpaRepository extends JpaRepository<CartItem, Long> {
               and product.status = com.fromvillage.product.domain.ProductStatus.ON_SALE
             """)
     List<CartItem> findAllActiveByUserId(Long userId);
+
+    @Query("""
+            select cartItem
+            from CartItem cartItem
+            join fetch cartItem.product product
+            join fetch product.seller seller
+            where cartItem.user.id = :userId
+            order by cartItem.id asc
+            """)
+    List<CartItem> findAllForCheckoutByUserId(Long userId);
 }

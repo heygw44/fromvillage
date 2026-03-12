@@ -25,6 +25,11 @@ public class CartStoreJpaAdapter implements CartStore {
     }
 
     @Override
+    public void deleteAll(Iterable<CartItem> cartItems) {
+        cartJpaRepository.deleteAll(cartItems);
+    }
+
+    @Override
     public Optional<CartItem> findById(Long cartItemId) {
         return cartJpaRepository.findByIdWithProductAndSeller(cartItemId);
     }
@@ -42,5 +47,10 @@ public class CartStoreJpaAdapter implements CartStore {
     @Override
     public List<CartItem> findAllActiveByUserId(Long userId) {
         return cartJpaRepository.findAllActiveByUserId(userId);
+    }
+
+    @Override
+    public List<CartItem> findAllForCheckoutByUserId(Long userId) {
+        return cartJpaRepository.findAllForCheckoutByUserId(userId);
     }
 }
