@@ -25,6 +25,7 @@
 - 세션 사용자 식별 및 권한 판별 보조 로직
 - `Order` 상태 전이 (`CREATED -> COMPLETED -> CANCELED`)
 - `checkout_order` 취소 시 하위 `seller_order` cascade 취소 규칙
+- `order_item` 상품 스냅샷 보존과 `seller_order`/`checkout_order` 금액 합계 계산
 - 주문 취소 시 재고 복구 규칙
 - 재고가 0이 될 때 `SOLD_OUT`으로, 재고 복구 후 1 이상이 될 때 `ON_SALE`로 자동 전환되는지 검증
 - 쿠폰 사용 가능 조건 (유효기간, 최소 주문 금액, 상태)
@@ -72,6 +73,7 @@
 - 세션 쿠키가 없는 요청과 만료된 세션 쿠키 요청을 분리해 각각 `AUTH_UNAUTHORIZED`, `AUTH_SESSION_EXPIRED`로 응답하는지 검증
 - 장바구니 체크아웃/바로구매 공통 유스케이스 검증
 - 주문 생성 시 판매자별 주문 분리 검증
+- 주문 모델 저장소가 `checkout_order -> seller_order -> order_item` 그래프를 저장/조회하는지 검증
 - 장바구니 체크아웃 성공 시 포함된 `cart_item`만 삭제되고, 바로 구매는 장바구니를 변경하지 않는지 검증
 - 장바구니 체크아웃은 `targetSellerId`를 사용하고, 바로 구매는 `productId`만으로 SELLER를 결정하는지 검증
 - 쿠폰 미사용 주문에서 `issuedCouponId`와 `targetSellerId` 생략이 허용되는지 검증
@@ -147,6 +149,7 @@
 - 저장소: 장바구니 저장/사용자+상품 단건 조회, `(user_id, product_id)` 중복 제약, USER별 목록 조회 검증
 - 저장소: soft delete 상품 제외용 active 장바구니 조회와 auditing 필드 영속화 검증
 - 저장소: 상품 저장/단건 조회, soft delete 포함 판매자 페이지 조회, 공개 조회용 soft delete 제외, 상품 연관관계 및 auditing 필드 영속화 검증
+- 저장소: 주문 저장/체크아웃 주문 단건 조회, 판매자 주문 분리 조회, 상품 스냅샷 영속화 검증
 - 통합: USER 장바구니 조회/담기/수량 수정/삭제 API 계약 검증
 - 통합: 장바구니 담기 시 동일 상품 중복 요청이 수량 합산으로 처리되는지 검증
 - 통합: SELLER/ADMIN/미인증 장바구니 접근 거부와 CSRF 보호 검증
