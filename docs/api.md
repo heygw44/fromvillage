@@ -660,32 +660,40 @@ null
 - `POST /api/v1/orders/checkout`
 - 인증 필요
 - CSRF 토큰 필요
-
-요청:
-
-```json
-{
-  "issuedCouponId": 10,
-  "targetSellerId": 3
-}
-```
-
-쿠폰 미사용 요청 예시:
-
-```json
-{}
-```
+- 요청 바디 없음
 
 설명:
 
 - 장바구니에 담긴 여러 SELLER 상품을 기준으로 주문을 생성한다.
 - 고객 관점에서는 하나의 주문이 생성되고, 내부적으로 SELLER별 `seller_order`로 분리된다.
+- 현재 MVP는 결제 연동 없이 체크아웃 성공 시 주문을 즉시 `COMPLETED`로 완료 처리한다.
 - 체크아웃 성공 시 해당 주문에 포함된 장바구니 항목만 삭제된다.
-- `issuedCouponId`는 발급된 개인 쿠폰 식별자이며, 쿠폰 미사용 시 생략 가능하다.
-- `targetSellerId`는 쿠폰을 적용할 대상 SELLER 주문을 지정하며, 쿠폰 미사용 시 생략 가능하다.
-- 쿠폰은 분리된 SELLER 주문 1건에만 적용된다.
-- 발급된 개인 쿠폰은 동시에 하나의 SELLER 주문에만 연결된다.
-- 쿠폰 최소 주문 금액은 할인 전 해당 `seller_order`의 상품 금액 합계 기준으로 검증한다.
+- 체크아웃 시점에 장바구니 항목을 다시 검증하며, soft delete 또는 판매 불가 상품이 포함되면 전체 요청을 거절한다.
+- 재고 차감 결과가 0이 되면 해당 상품은 같은 트랜잭션 안에서 `SOLD_OUT`으로 전이된다.
+- 현재 `M3-04` 구현 범위에는 쿠폰 적용이 포함되지 않는다. `issuedCouponId`, `targetSellerId` 기반 쿠폰 적용은 `M4-04`에서 추가한다.
+
+성공 응답 데이터 예시:
+
+```json
+{
+  "orderId": 1,
+  "status": "COMPLETED",
+  "sellerOrderCount": 2,
+  "totalAmount": 107000,
+  "discountAmount": 0,
+  "finalAmount": 107000,
+  "completedAt": "2026-03-12T12:00:00"
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
+- 빈 장바구니는 `400 Bad Request` + `ORDER_CHECKOUT_CART_EMPTY`
+- soft delete 또는 판매 불가 상품 포함 시 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
+- 재고 부족 시 `409 Conflict` + `PRODUCT_STOCK_INSUFFICIENT`
 
 ### 8.2 바로 구매
 

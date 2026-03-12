@@ -9,6 +9,8 @@ public interface CartStore {
 
     void delete(CartItem cartItem);
 
+    void deleteAll(Iterable<CartItem> cartItems);
+
     Optional<CartItem> findById(Long cartItemId);
 
     Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId);
@@ -16,4 +18,6 @@ public interface CartStore {
     List<CartItem> findAllByUserId(Long userId);
 
     List<CartItem> findAllActiveByUserId(Long userId);
+
+    List<CartItem> findAllForCheckoutByUserId(Long userId);
 }

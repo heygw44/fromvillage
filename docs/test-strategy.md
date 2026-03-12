@@ -71,13 +71,14 @@
 - ADMIN과 SELLER 권한은 명시적으로 분리되며, 역할 상속 없이 각각 허용/거부되는지 검증
 - 미인증 요청의 `401 + AUTH_UNAUTHORIZED`, 세션 만료 요청의 `401 + AUTH_SESSION_EXPIRED`, CSRF 실패의 `403 + AUTH_CSRF_INVALID`, 권한 부족 요청의 `403 + AUTH_FORBIDDEN` 응답 검증
 - 세션 쿠키가 없는 요청과 만료된 세션 쿠키 요청을 분리해 각각 `AUTH_UNAUTHORIZED`, `AUTH_SESSION_EXPIRED`로 응답하는지 검증
-- 장바구니 체크아웃/바로구매 공통 유스케이스 검증
+- 장바구니 체크아웃 성공 유스케이스 검증
 - 주문 생성 시 판매자별 주문 분리 검증
 - 주문 모델 저장소가 `checkout_order -> seller_order -> order_item` 그래프를 저장/조회하는지 검증
-- 장바구니 체크아웃 성공 시 포함된 `cart_item`만 삭제되고, 바로 구매는 장바구니를 변경하지 않는지 검증
-- 장바구니 체크아웃은 `targetSellerId`를 사용하고, 바로 구매는 `productId`만으로 SELLER를 결정하는지 검증
-- 쿠폰 미사용 주문에서 `issuedCouponId`와 `targetSellerId` 생략이 허용되는지 검증
-- 쿠폰 최소 주문 금액을 할인 전 `seller_order.total_amount` 기준으로 검증하는지 확인
+- 장바구니 체크아웃 성공 시 포함된 `cart_item`만 삭제되는지 검증
+- 장바구니 체크아웃 성공으로 재고가 정확히 0이 되면 상품이 `SOLD_OUT`으로 전이되는지 검증
+- 체크아웃 시점에 soft delete 또는 판매 불가 상품이 포함되면 `409 + CART_PRODUCT_UNAVAILABLE`로 전체 실패하는지 검증
+- 체크아웃 시점에 재고가 부족하면 `409 + PRODUCT_STOCK_INSUFFICIENT`로 전체 실패하는지 검증
+- 빈 장바구니 체크아웃이 `400 + ORDER_CHECKOUT_CART_EMPTY`로 거절되는지 검증
 - 상품 `imageUrl`의 `https` 검증 및 서버 비-fetch 정책 검증
 - 공개 상품 목록 조회의 `keyword`, `category`, `sort`, 페이지네이션 계약 검증
 - 공개 상품 목록 조회의 `size` 상한 검증
@@ -156,7 +157,8 @@
 - 통합: 타인 장바구니 수정/삭제 요청의 `403 + AUTH_FORBIDDEN` 검증
 - 통합: soft delete 상품 담기 실패와 `SOLD_OUT` 상품 수량 수정 실패의 `409 + CART_PRODUCT_UNAVAILABLE` 검증
 - 통합: 상품 범위에서는 SELLER 상품 등록/수정/삭제, SELLER 본인 상품 목록 조회, 공개 목록/상세 조회 계약을 검증
-- 통합: 체크아웃 API, 바로구매 API, 판매자별 주문 분리는 후속 주문 이슈에서 검증
+- 통합: 장바구니 체크아웃 API의 성공/실패/보안 계약을 검증
+- 통합: 바로구매 API와 쿠폰 적용 규칙은 후속 주문 이슈에서 검증
 
 ### 쿠폰
 

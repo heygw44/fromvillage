@@ -7,6 +7,7 @@ import com.fromvillage.product.domain.ProductCategory;
 import com.fromvillage.user.domain.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,8 @@ class SellerOrderTest {
     void createSellerOrderRejectsItemFromAnotherSeller() {
         User seller = createSeller("seller@example.com", "seller");
         User anotherSeller = createSeller("another-seller@example.com", "anotherSeller");
+        ReflectionTestUtils.setField(seller, "id", 1L);
+        ReflectionTestUtils.setField(anotherSeller, "id", 2L);
 
         OrderItem foreignItem = OrderItem.create(createProduct(anotherSeller, "배추", 8000L), 1);
 
