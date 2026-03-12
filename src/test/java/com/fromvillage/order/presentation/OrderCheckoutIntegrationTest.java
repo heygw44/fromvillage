@@ -89,6 +89,11 @@ class OrderCheckoutIntegrationTest {
                 passwordEncoder.encode("Password12!"),
                 "구매자"
         ));
+        User otherBuyer = userRepository.saveAndFlush(User.createUser(
+                "other-buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "다른구매자"
+        ));
 
         Product potato = productRepository.saveAndFlush(Product.create(
                 seller1,
@@ -121,6 +126,7 @@ class OrderCheckoutIntegrationTest {
         cartRepository.saveAndFlush(CartItem.create(buyer, potato, 2));
         cartRepository.saveAndFlush(CartItem.create(buyer, cabbage, 1));
         cartRepository.saveAndFlush(CartItem.create(buyer, mackerel, 3));
+        cartRepository.saveAndFlush(CartItem.create(otherBuyer, potato, 1));
 
         Cookie userSession = login("buyer@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(userSession);
@@ -147,6 +153,7 @@ class OrderCheckoutIntegrationTest {
         CheckoutOrder checkoutOrder = checkoutOrderRepository.findByIdWithSellerOrders(orderId).orElseThrow();
         List<SellerOrder> sellerOrders = sellerOrderRepository.findAllByCheckoutOrderIdWithItems(orderId);
 
+        assertThat(checkoutOrderRepository.count()).isEqualTo(1);
         assertThat(checkoutOrder.getUser().getId()).isEqualTo(buyer.getId());
         assertThat(checkoutOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);
         assertThat(checkoutOrder.getTotalAmount()).isEqualTo(107000L);
@@ -192,6 +199,7 @@ class OrderCheckoutIntegrationTest {
         assertThat(updatedMackerel.getStatus()).isEqualTo(ProductStatus.ON_SALE);
 
         assertThat(cartRepository.findAllByUserId(buyer.getId())).isEmpty();
+        assertThat(cartRepository.findAllByUserId(otherBuyer.getId())).hasSize(1);
 
         mockMvc.perform(get("/api/v1/cart-items")
                         .cookie(userSession))

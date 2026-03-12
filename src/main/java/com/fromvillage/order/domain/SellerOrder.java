@@ -118,10 +118,7 @@ public class SellerOrder extends BaseTimeEntity {
     private void validateSameSeller(OrderItem orderItem) {
         Long orderItemSellerId = orderItem.getProduct().getSeller().getId();
         Long sellerId = this.seller.getId();
-
-        boolean sameSeller = orderItemSellerId != null && sellerId != null
-                ? Objects.equals(orderItemSellerId, sellerId)
-                : Objects.equals(orderItem.getProduct().getSeller(), this.seller);
+        boolean sameSeller = Objects.equals(orderItemSellerId, sellerId);
 
         if (!sameSeller) {
             throw new BusinessException(ErrorCode.ORDER_PRODUCT_SELLER_MISMATCH);
