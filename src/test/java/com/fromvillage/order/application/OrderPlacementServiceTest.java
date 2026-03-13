@@ -16,6 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
@@ -117,7 +118,7 @@ class OrderPlacementServiceTest {
 
     private User seller(Long id, String email, String nickname) {
         User seller = User.createUser(email, "encoded-password", nickname);
-        seller.approveSeller(java.time.LocalDateTime.of(2026, 3, 12, 12, 0));
+        seller.approveSeller(LocalDateTime.of(2026, 3, 12, 12, 0));
         ReflectionTestUtils.setField(seller, "id", id);
         return seller;
     }

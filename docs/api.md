@@ -692,7 +692,7 @@ null
 - 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
 - CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
 - 빈 장바구니는 `400 Bad Request` + `ORDER_CHECKOUT_CART_EMPTY`
-- soft delete 또는 판매 불가 상품 포함 시 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
+- soft delete 또는 판매 불가 상품 포함 시 `409 Conflict` + `ORDER_PRODUCT_UNAVAILABLE`
 - 재고 부족 시 `409 Conflict` + `PRODUCT_STOCK_INSUFFICIENT`
 
 ### 8.2 바로 구매
@@ -737,7 +737,7 @@ null
 - 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
 - CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
 - 존재하지 않는 상품은 `404 Not Found` + `PRODUCT_NOT_FOUND`
-- soft delete 또는 판매 불가 상품은 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
+- soft delete 또는 판매 불가 상품은 `409 Conflict` + `ORDER_PRODUCT_UNAVAILABLE`
 - 재고 부족 시 `409 Conflict` + `PRODUCT_STOCK_INSUFFICIENT`
 
 ### 8.3 내 주문 목록 조회

@@ -314,8 +314,8 @@ class OrderCheckoutIntegrationTest {
                         ))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"))
-                .andExpect(jsonPath("$.message").value("현재 장바구니에 담을 수 없는 상품입니다."));
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
 
         assertThat(checkoutOrderRepository.findAll()).isEmpty();
         assertThat(sellerOrderRepository.findAll()).isEmpty();
@@ -427,8 +427,8 @@ class OrderCheckoutIntegrationTest {
                         ))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"))
-                .andExpect(jsonPath("$.message").value("현재 장바구니에 담을 수 없는 상품입니다."));
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
 
         assertThat(checkoutOrderRepository.findAll()).isEmpty();
         assertThat(sellerOrderRepository.findAll()).isEmpty();
@@ -604,9 +604,6 @@ class OrderCheckoutIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("AUTH_CSRF_INVALID"));
     }
-
-
-
     @Test
     @DisplayName("체크아웃으로 재고가 정확히 0이 되면 상품은 SOLD_OUT으로 전이된다")
     void checkoutMarksProductSoldOutWhenStockBecomesZero() throws Exception {
@@ -723,8 +720,8 @@ class OrderCheckoutIntegrationTest {
                         .content(objectMapper.writeValueAsString(Map.of())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"))
-                .andExpect(jsonPath("$.message").value("현재 장바구니에 담을 수 없는 상품입니다."));
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
 
         assertThat(checkoutOrderRepository.findAll()).isEmpty();
         assertThat(sellerOrderRepository.findAll()).isEmpty();
@@ -784,8 +781,8 @@ class OrderCheckoutIntegrationTest {
                         .content(objectMapper.writeValueAsString(Map.of())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"))
-                .andExpect(jsonPath("$.message").value("현재 장바구니에 담을 수 없는 상품입니다."));
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
 
         assertThat(checkoutOrderRepository.findAll()).isEmpty();
         assertThat(sellerOrderRepository.findAll()).isEmpty();

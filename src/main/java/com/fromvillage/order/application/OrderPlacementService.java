@@ -51,7 +51,7 @@ public class OrderPlacementService {
         for (OrderCheckoutLine orderLine : orderLines) {
             Product product = orderLine.product();
             if (product.isDeleted() || product.getStatus() != ProductStatus.ON_SALE) {
-                throw new BusinessException(ErrorCode.CART_PRODUCT_UNAVAILABLE);
+                throw new BusinessException(ErrorCode.ORDER_PRODUCT_UNAVAILABLE);
             }
         }
     }
