@@ -76,7 +76,7 @@
 - 주문 모델 저장소가 `checkout_order -> seller_order -> order_item` 그래프를 저장/조회하는지 검증
 - 장바구니 체크아웃 성공 시 포함된 `cart_item`만 삭제되는지 검증
 - 장바구니 체크아웃 성공으로 재고가 정확히 0이 되면 상품이 `SOLD_OUT`으로 전이되는지 검증
-- 체크아웃 시점에 soft delete 또는 판매 불가 상품이 포함되면 `409 + CART_PRODUCT_UNAVAILABLE`로 전체 실패하는지 검증
+- 체크아웃 시점에 soft delete 또는 판매 불가 상품이 포함되면 `409 + ORDER_PRODUCT_UNAVAILABLE`로 전체 실패하는지 검증
 - 체크아웃 시점에 재고가 부족하면 `409 + PRODUCT_STOCK_INSUFFICIENT`로 전체 실패하는지 검증
 - 빈 장바구니 체크아웃이 `400 + ORDER_CHECKOUT_CART_EMPTY`로 거절되는지 검증
 - 상품 `imageUrl`의 `https` 검증 및 서버 비-fetch 정책 검증
@@ -158,7 +158,8 @@
 - 통합: soft delete 상품 담기 실패와 `SOLD_OUT` 상품 수량 수정 실패의 `409 + CART_PRODUCT_UNAVAILABLE` 검증
 - 통합: 상품 범위에서는 SELLER 상품 등록/수정/삭제, SELLER 본인 상품 목록 조회, 공개 목록/상세 조회 계약을 검증
 - 통합: 장바구니 체크아웃 API의 성공/실패/보안 계약을 검증
-- 통합: 바로구매 API와 쿠폰 적용 규칙은 후속 주문 이슈에서 검증
+- 통합: 바로 구매 API의 성공/실패/보안 계약과 장바구니 비변경 규칙을 검증
+- 통합: 바로 구매 쿠폰 적용 규칙은 후속 쿠폰 이슈에서 검증
 
 ### 쿠폰
 

@@ -692,7 +692,7 @@ null
 - 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
 - CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
 - 빈 장바구니는 `400 Bad Request` + `ORDER_CHECKOUT_CART_EMPTY`
-- soft delete 또는 판매 불가 상품 포함 시 `409 Conflict` + `CART_PRODUCT_UNAVAILABLE`
+- soft delete 또는 판매 불가 상품 포함 시 `409 Conflict` + `ORDER_PRODUCT_UNAVAILABLE`
 - 재고 부족 시 `409 Conflict` + `PRODUCT_STOCK_INSUFFICIENT`
 
 ### 8.2 바로 구매
@@ -704,20 +704,41 @@ null
 설명:
 
 - 바로 구매는 장바구니 항목을 생성하거나 삭제하지 않는다.
-- 내부 주문 생성 규칙과 쿠폰 적용 규칙은 장바구니 체크아웃과 동일하다.
+- 내부 주문 생성 규칙은 장바구니 체크아웃과 동일하다.
 - 바로 구매는 단일 상품 기준이므로 `productId`로 SELLER가 결정되며, `targetSellerId`를 별도로 받지 않는다.
-- `issuedCouponId`는 쿠폰 미사용 시 생략 가능하다.
-- 쿠폰 최소 주문 금액은 할인 전 해당 상품의 주문 금액 기준으로 검증한다.
+- 현재 `M3-05` 구현 범위에는 쿠폰 적용이 포함되지 않는다. `issuedCouponId`, 최소 주문 금액 검증, `targetSellerId` 기반 쿠폰 규칙은 `M4-04`에서 추가한다.
 
 요청:
 
 ```json
 {
   "productId": 1,
-  "quantity": 2,
-  "issuedCouponId": 10
+  "quantity": 2
 }
 ```
+
+성공 응답 데이터 예시:
+
+```json
+{
+  "orderId": 2,
+  "status": "COMPLETED",
+  "sellerOrderCount": 1,
+  "totalAmount": 44000,
+  "discountAmount": 0,
+  "finalAmount": 44000,
+  "completedAt": "2026-03-12T12:00:00"
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
+- 존재하지 않는 상품은 `404 Not Found` + `PRODUCT_NOT_FOUND`
+- soft delete 또는 판매 불가 상품은 `409 Conflict` + `ORDER_PRODUCT_UNAVAILABLE`
+- 재고 부족 시 `409 Conflict` + `PRODUCT_STOCK_INSUFFICIENT`
 
 ### 8.3 내 주문 목록 조회
 

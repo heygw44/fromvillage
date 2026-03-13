@@ -211,6 +211,400 @@ class OrderCheckoutIntegrationTest {
     }
 
     @Test
+    @DisplayName("USER는 단일 상품을 바로 구매할 수 있다")
+    void userCanDirectCheckoutSingleProduct() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 2
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.orderId").isNumber())
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.sellerOrderCount").value(1))
+                .andExpect(jsonPath("$.data.totalAmount").value(44000))
+                .andExpect(jsonPath("$.data.discountAmount").value(0))
+                .andExpect(jsonPath("$.data.finalAmount").value(44000))
+                .andReturn();
+
+        JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
+        Long orderId = response.get("data").get("orderId").asLong();
+
+        CheckoutOrder checkoutOrder = checkoutOrderRepository.findByIdWithSellerOrders(orderId).orElseThrow();
+        List<SellerOrder> sellerOrders = sellerOrderRepository.findAllByCheckoutOrderIdWithItems(orderId);
+
+        assertThat(checkoutOrderRepository.count()).isEqualTo(1);
+        assertThat(checkoutOrder.getUser().getId()).isEqualTo(buyer.getId());
+        assertThat(checkoutOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(checkoutOrder.getTotalAmount()).isEqualTo(44000L);
+        assertThat(checkoutOrder.getDiscountAmount()).isEqualTo(0L);
+        assertThat(checkoutOrder.getFinalAmount()).isEqualTo(44000L);
+
+        assertThat(sellerOrders).hasSize(1);
+        assertThat(sellerOrders.get(0).getSeller().getId()).isEqualTo(seller.getId());
+        assertThat(sellerOrders.get(0).getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(sellerOrders.get(0).getTotalAmount()).isEqualTo(44000L);
+        assertThat(sellerOrders.get(0).getDiscountAmount()).isEqualTo(0L);
+        assertThat(sellerOrders.get(0).getFinalAmount()).isEqualTo(44000L);
+        assertThat(sellerOrders.get(0).getOrderItems()).hasSize(1);
+
+        Product updatedPotato = productRepository.findById(potato.getId()).orElseThrow();
+        assertThat(updatedPotato.getStockQuantity()).isEqualTo(8);
+        assertThat(updatedPotato.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @Test
+    @DisplayName("soft delete 상품은 바로 구매할 수 없다")
+    void directCheckoutRejectsDeletedProduct() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        potato.softDelete(LocalDateTime.of(2026, 3, 12, 12, 0));
+        productRepository.saveAndFlush(potato);
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 2
+                        ))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
+
+        assertThat(checkoutOrderRepository.findAll()).isEmpty();
+        assertThat(sellerOrderRepository.findAll()).isEmpty();
+
+        Product unchangedPotato = productRepository.findById(potato.getId()).orElseThrow();
+        assertThat(unchangedPotato.getStockQuantity()).isEqualTo(10);
+        assertThat(unchangedPotato.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("바로 구매는 기존 장바구니 항목을 변경하지 않는다")
+    void directCheckoutDoesNotChangeCartItems() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+        Product cabbage = productRepository.saveAndFlush(Product.create(
+                seller,
+                "절임배추 10kg",
+                "전남 해남 절임배추",
+                ProductCategory.AGRICULTURE,
+                18000L,
+                8,
+                "https://cdn.example.com/cabbage.jpg"
+        ));
+
+        cartRepository.saveAndFlush(CartItem.create(buyer, cabbage, 3));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 2
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.sellerOrderCount").value(1))
+                .andExpect(jsonPath("$.data.totalAmount").value(44000))
+                .andExpect(jsonPath("$.data.finalAmount").value(44000));
+
+        List<CartItem> cartItems = cartRepository.findAllByUserId(buyer.getId());
+
+        assertThat(cartItems).hasSize(1);
+        assertThat(cartItems.get(0).getProduct().getId()).isEqualTo(cabbage.getId());
+        assertThat(cartItems.get(0).getQuantity()).isEqualTo(3);
+
+        mockMvc.perform(get("/api/v1/cart-items")
+                        .cookie(userSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].productId").value(cabbage.getId()))
+                .andExpect(jsonPath("$.data.items[0].quantity").value(3))
+                .andExpect(jsonPath("$.data.totalItemCount").value(1))
+                .andExpect(jsonPath("$.data.totalQuantity").value(3))
+                .andExpect(jsonPath("$.data.totalAmount").value(54000));
+    }
+
+    @Test
+    @DisplayName("판매 불가 상품은 바로 구매할 수 없다")
+    void directCheckoutRejectsSoldOutProduct() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product cabbage = productRepository.saveAndFlush(Product.create(
+                seller,
+                "절임배추 10kg",
+                "전남 해남 절임배추",
+                ProductCategory.AGRICULTURE,
+                18000L,
+                3,
+                "https://cdn.example.com/cabbage.jpg"
+        ));
+
+        cabbage.decreaseStock(3);
+        productRepository.saveAndFlush(cabbage);
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", cabbage.getId(),
+                                "quantity", 1
+                        ))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
+
+        assertThat(checkoutOrderRepository.findAll()).isEmpty();
+        assertThat(sellerOrderRepository.findAll()).isEmpty();
+
+        Product soldOutCabbage = productRepository.findById(cabbage.getId()).orElseThrow();
+        assertThat(soldOutCabbage.getStockQuantity()).isEqualTo(0);
+        assertThat(soldOutCabbage.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
+    }
+
+    @Test
+    @DisplayName("바로 구매 시점에 재고가 부족하면 주문은 실패한다")
+    void directCheckoutRejectsInsufficientStock() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                2,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 3
+                        ))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("PRODUCT_STOCK_INSUFFICIENT"))
+                .andExpect(jsonPath("$.message").value("상품 재고가 부족합니다."));
+
+        assertThat(checkoutOrderRepository.findAll()).isEmpty();
+        assertThat(sellerOrderRepository.findAll()).isEmpty();
+
+        Product unchangedPotato = productRepository.findById(potato.getId()).orElseThrow();
+        assertThat(unchangedPotato.getStockQuantity()).isEqualTo(2);
+        assertThat(unchangedPotato.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @Test
+    @DisplayName("SELLER는 바로 구매 API에 접근할 수 없다")
+    void sellerCannotDirectCheckout() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        Cookie sellerSession = login("seller@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(sellerSession);
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(sellerSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 1
+                        ))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("ADMIN은 바로 구매 API에 접근할 수 없다")
+    void adminCannotDirectCheckout() throws Exception {
+        userRepository.saveAndFlush(User.createAdmin(
+                "admin@example.com",
+                passwordEncoder.encode("Password12!"),
+                "운영자"
+        ));
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        Cookie adminSession = login("admin@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(adminSession);
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(adminSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 1
+                        ))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("미인증 사용자는 바로 구매 API에 접근할 수 없다")
+    void unauthenticatedUserCannotDirectCheckout() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        CsrfSession anonymousCsrfSession = fetchCsrfSession();
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(anonymousCsrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(anonymousCsrfSession.headerName(), anonymousCsrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 1
+                        ))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("바로 구매는 CSRF 토큰이 없으면 거절된다")
+    void directCheckoutRequiresCsrf() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+        Product potato = productRepository.saveAndFlush(Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+
+        mockMvc.perform(post("/api/v1/orders/direct-checkout")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "productId", potato.getId(),
+                                "quantity", 1
+                        ))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_CSRF_INVALID"));
+    }
+    @Test
     @DisplayName("체크아웃으로 재고가 정확히 0이 되면 상품은 SOLD_OUT으로 전이된다")
     void checkoutMarksProductSoldOutWhenStockBecomesZero() throws Exception {
         User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
@@ -326,8 +720,8 @@ class OrderCheckoutIntegrationTest {
                         .content(objectMapper.writeValueAsString(Map.of())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"))
-                .andExpect(jsonPath("$.message").value("현재 장바구니에 담을 수 없는 상품입니다."));
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
 
         assertThat(checkoutOrderRepository.findAll()).isEmpty();
         assertThat(sellerOrderRepository.findAll()).isEmpty();
@@ -387,8 +781,8 @@ class OrderCheckoutIntegrationTest {
                         .content(objectMapper.writeValueAsString(Map.of())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("CART_PRODUCT_UNAVAILABLE"))
-                .andExpect(jsonPath("$.message").value("현재 장바구니에 담을 수 없는 상품입니다."));
+                .andExpect(jsonPath("$.code").value("ORDER_PRODUCT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("현재 주문할 수 없는 상품입니다."));
 
         assertThat(checkoutOrderRepository.findAll()).isEmpty();
         assertThat(sellerOrderRepository.findAll()).isEmpty();

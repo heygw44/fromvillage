@@ -35,6 +35,7 @@ public enum ErrorCode {
 
     // Order
     ORDER_CHECKOUT_CART_EMPTY(HttpStatus.BAD_REQUEST, "ORDER_CHECKOUT_CART_EMPTY", "체크아웃할 장바구니 항목이 없습니다."),
+    ORDER_PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "ORDER_PRODUCT_UNAVAILABLE", "현재 주문할 수 없는 상품입니다."),
     ORDER_ITEM_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "ORDER_ITEM_QUANTITY_INVALID", "주문 수량은 1개 이상이어야 합니다."),
     ORDER_ITEMS_REQUIRED(HttpStatus.BAD_REQUEST, "ORDER_ITEMS_REQUIRED", "주문 상품은 1개 이상이어야 합니다."),
     ORDER_PRODUCT_SELLER_MISMATCH(HttpStatus.BAD_REQUEST, "ORDER_PRODUCT_SELLER_MISMATCH", "판매자 주문에는 해당 판매자의 상품만 포함할 수 있습니다."),
