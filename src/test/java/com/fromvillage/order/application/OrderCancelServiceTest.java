@@ -62,7 +62,6 @@ class OrderCancelServiceTest {
         mackerel.decreaseStock(1);
 
         CheckoutOrder checkoutOrder = completedOrder(
-                "ORD-20000000000000000000000000000000",
                 200L,
                 buyer,
                 List.of(
@@ -107,7 +106,6 @@ class OrderCancelServiceTest {
         potato.decreaseStock(1);
 
         CheckoutOrder checkoutOrder = completedOrder(
-                "ORD-20000000000000000000000000000000",
                 200L,
                 owner,
                 List.of(
@@ -155,7 +153,6 @@ class OrderCancelServiceTest {
                         SellerOrder.create(seller, List.of(OrderItem.create(potato, 1)))
                 )
         );
-        ReflectionTestUtils.setField(checkoutOrder, "orderNumber", "ORD-20000000000000000000000000000000");
         ReflectionTestUtils.setField(checkoutOrder, "id", 200L);
 
         given(checkoutOrderQueryPort.findOwnerIdByOrderNumber(checkoutOrder.getOrderNumber()))
@@ -180,7 +177,6 @@ class OrderCancelServiceTest {
         potato.restoreStock(1);
 
         CheckoutOrder checkoutOrder = completedOrder(
-                "ORD-20000000000000000000000000000000",
                 200L,
                 buyer,
                 List.of(
@@ -205,14 +201,12 @@ class OrderCancelServiceTest {
     }
 
     private CheckoutOrder completedOrder(
-            String orderNumber,
             Long orderId,
             User buyer,
             List<SellerOrder> sellerOrders,
             LocalDateTime completedAt
     ) {
         CheckoutOrder checkoutOrder = CheckoutOrder.create(buyer, sellerOrders);
-        ReflectionTestUtils.setField(checkoutOrder, "orderNumber", orderNumber);
         ReflectionTestUtils.setField(checkoutOrder, "id", orderId);
         checkoutOrder.complete(completedAt);
         return checkoutOrder;

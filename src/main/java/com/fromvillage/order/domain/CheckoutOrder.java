@@ -38,7 +38,7 @@ public class CheckoutOrder extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_number", nullable = false, unique = true, length = 36, updatable = false)
+    @Column(name = "order_number", nullable = false, unique = true, length = 40, updatable = false)
     private String orderNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

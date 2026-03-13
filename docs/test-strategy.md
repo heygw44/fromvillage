@@ -78,6 +78,7 @@
 - 내 주문 목록 조회가 본인 주문만 반환하고 기본 정렬(`createdAt,desc`)과 허용된 대체 정렬(`createdAt,asc`)을 따르는지 검증
 - 내 주문 목록/체크아웃/취소 응답이 내부 PK 대신 `orderNumber`를 반환하는지 검증
 - 내 주문 목록 조회가 허용되지 않은 정렬 키와 복수 정렬 파라미터를 `400 + VALIDATION_ERROR`로 거절하는지 검증
+- 주문 상세/취소 경로의 `orderNumber` 형식 오류가 `400 + VALIDATION_ERROR`로 거절되는지 검증
 - 내 주문 상세 조회가 `seller_order`, `order_item` 스냅샷과 취소 시각까지 반환하되 내부 PK는 노출하지 않는지 검증
 - 내 주문 상세 조회에서 타인 주문, 존재하지 않는 주문, `SELLER`/`ADMIN` 접근을 각각 차단하는지 검증
 - 주문 취소 API가 `COMPLETED` 주문만 취소하고, 이미 `CANCELED` 또는 아직 `CREATED`인 주문은 `409 + ORDER_STATUS_TRANSITION_INVALID`로 거절하는지 검증

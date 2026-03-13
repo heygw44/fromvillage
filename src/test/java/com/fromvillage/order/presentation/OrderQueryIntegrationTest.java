@@ -23,7 +23,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.util.ReflectionTestUtils;
 import com.fromvillage.order.domain.OrderStatus;
 import com.fromvillage.order.infrastructure.SellerOrderJpaRepository;
 import org.springframework.http.MediaType;
@@ -373,11 +372,29 @@ class OrderQueryIntegrationTest {
 
         Cookie userSession = login("buyer@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-UNKNOWNORDERNUMBER0000000000000")
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                         .cookie(userSession))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("형식이 잘못된 주문번호로 주문 상세를 조회하면 400을 반환한다")
+    void userGetsBadRequestWhenOrderNumberFormatIsInvalid() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "invalid-order-number")
+                        .cookie(userSession))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("orderNumber"));
     }
 
     @Test
@@ -387,7 +404,7 @@ class OrderQueryIntegrationTest {
 
         Cookie sellerSession = login("seller@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-SELLERBLOCKED0000000000000000")
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
                         .cookie(sellerSession))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
@@ -404,7 +421,7 @@ class OrderQueryIntegrationTest {
 
         Cookie adminSession = login("admin@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-ADMINBLOCKED00000000000000000")
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
                         .cookie(adminSession))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
@@ -413,7 +430,7 @@ class OrderQueryIntegrationTest {
     @Test
     @DisplayName("미인증 사용자는 내 주문 상세를 조회할 수 없다")
     void unauthenticatedUserCannotGetOwnOrderDetail() throws Exception {
-        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-AUTHBLOCKED00000000000000000"))
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"));
     }
@@ -602,11 +619,33 @@ class OrderQueryIntegrationTest {
     }
 
     @Test
+    @DisplayName("형식이 잘못된 주문번호로 주문 취소를 요청하면 400을 반환한다")
+    void cancelRejectsInvalidOrderNumberFormat() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "invalid-order-number")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("orderNumber"));
+    }
+
+    @Test
     @DisplayName("미인증 사용자는 주문 취소 API에 접근할 수 없다")
     void unauthenticatedUserCannotCancelOrder() throws Exception {
         CsrfSession anonymousCsrfSession = fetchCsrfSession();
 
-        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-UNAUTHCANCEL0000000000000000")
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
                         .cookie(anonymousCsrfSession.sessionCookie())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(anonymousCsrfSession.headerName(), anonymousCsrfSession.token())
@@ -623,7 +662,7 @@ class OrderQueryIntegrationTest {
         Cookie sellerSession = login("seller@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(sellerSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-SELLERCANCEL0000000000000000")
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
                         .cookie(sellerSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -644,7 +683,7 @@ class OrderQueryIntegrationTest {
         Cookie adminSession = login("admin@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(adminSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-ADMINCANCEL00000000000000000")
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-99999999999999999999999999999999")
                         .cookie(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -767,7 +806,7 @@ class OrderQueryIntegrationTest {
     }
 
     private String orderNumber(CheckoutOrder checkoutOrder) {
-        return (String) ReflectionTestUtils.getField(checkoutOrder, "orderNumber");
+        return checkoutOrder.getOrderNumber();
     }
 
     private Cookie login(String email, String password) throws Exception {

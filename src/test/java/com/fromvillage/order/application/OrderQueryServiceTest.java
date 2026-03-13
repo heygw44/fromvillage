@@ -73,7 +73,6 @@ class OrderQueryServiceTest {
         User seller = seller(1L, "seller@example.com", "판매자");
         Product potato = product(seller, "감자", 12000L, 3);
         CheckoutOrder checkoutOrder = completedOrder(
-                "ORD-20000000000000000000000000000000",
                 200L,
                 buyer,
                 List.of(
@@ -92,9 +91,8 @@ class OrderQueryServiceTest {
         verify(checkoutOrderQueryPort).findDetailByOrderNumber(checkoutOrder.getOrderNumber());
     }
 
-    private CheckoutOrder completedOrder(String orderNumber, Long orderId, User buyer, List<SellerOrder> sellerOrders) {
+    private CheckoutOrder completedOrder(Long orderId, User buyer, List<SellerOrder> sellerOrders) {
         CheckoutOrder checkoutOrder = CheckoutOrder.create(buyer, sellerOrders);
-        ReflectionTestUtils.setField(checkoutOrder, "orderNumber", orderNumber);
         ReflectionTestUtils.setField(checkoutOrder, "id", orderId);
         checkoutOrder.complete(LocalDateTime.of(2026, 3, 13, 10, 0));
         return checkoutOrder;
