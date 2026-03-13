@@ -129,8 +129,8 @@ class OrderPlacementServiceTest {
     }
 
     @Test
-    @DisplayName("판매 불가 상품이 포함되면 ORDER_PRODUCT_UNAVAILABLE 예외가 발생한다")
-    void placeRejectsUnavailableProduct() {
+    @DisplayName("품절 상품이 포함되면 ORDER_PRODUCT_UNAVAILABLE 예외가 발생한다")
+    void placeRejectsSoldOutProduct() {
         User buyer = user(100L, "buyer@example.com", "구매자");
         User seller = seller(1L, "seller@example.com", "판매자");
         Product cabbage = Product.create(
@@ -147,6 +147,33 @@ class OrderPlacementServiceTest {
         assertThatThrownBy(() -> orderPlacementService.place(
                 buyer,
                 List.of(OrderCheckoutLine.of(cabbage, 1))
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ORDER_PRODUCT_UNAVAILABLE);
+
+        verify(checkoutOrderStore, never()).save(org.mockito.ArgumentMatchers.any(CheckoutOrder.class));
+    }
+
+    @Test
+    @DisplayName("삭제된 상품이 포함되면 ORDER_PRODUCT_UNAVAILABLE 예외가 발생한다")
+    void placeRejectsDeletedProduct() {
+        User buyer = user(100L, "buyer@example.com", "구매자");
+        User seller = seller(1L, "seller@example.com", "판매자");
+        Product potato = Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                10,
+                "https://cdn.example.com/potato.jpg"
+        );
+        potato.softDelete(LocalDateTime.of(2026, 3, 12, 12, 0));
+
+        assertThatThrownBy(() -> orderPlacementService.place(
+                buyer,
+                List.of(OrderCheckoutLine.of(potato, 1))
         ))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
