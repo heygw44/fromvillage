@@ -67,6 +67,10 @@ public class OrderQueryService {
             return OrderQuerySort.CREATED_AT_DESC;
         }
 
+        if (sort.stream().skip(1).findAny().isPresent()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+
         Sort.Order order = sort.stream()
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.VALIDATION_ERROR));

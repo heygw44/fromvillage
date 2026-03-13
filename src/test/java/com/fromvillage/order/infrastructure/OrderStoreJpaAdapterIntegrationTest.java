@@ -22,8 +22,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -54,6 +56,9 @@ class OrderStoreJpaAdapterIntegrationTest {
 
     @Autowired
     private ProductJpaRepository productJpaRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     @DisplayName("체크아웃 주문 그래프를 저장하고 seller order, order item까지 함께 조회할 수 있다")
@@ -200,6 +205,52 @@ class OrderStoreJpaAdapterIntegrationTest {
                 .containsExactly(15000L, 32000L);
     }
 
+    @Test
+    @DisplayName("주문 요약 페이지 조회는 createdAt이 같아도 id까지 사용해 안정적으로 정렬한다")
+    void findOrderSummariesByUserIdUsesStableSort() {
+        User buyer = createUser("buyer@example.com", "buyer");
+        User seller = createSeller("seller@example.com", "seller");
+
+        Product potato = createProduct(seller, "감자", 12000L);
+
+        CheckoutOrder firstOrder = checkoutOrderStore.save(
+                CheckoutOrder.create(
+                        buyer,
+                        List.of(
+                                SellerOrder.create(seller, List.of(OrderItem.create(potato, 1)))
+                        )
+                )
+        );
+        CheckoutOrder secondOrder = checkoutOrderStore.save(
+                CheckoutOrder.create(
+                        buyer,
+                        List.of(
+                                SellerOrder.create(seller, List.of(OrderItem.create(potato, 2)))
+                        )
+                )
+        );
+
+        LocalDateTime sameCreatedAt = LocalDateTime.of(2026, 3, 13, 12, 0);
+        updateCreatedAt(firstOrder.getId(), sameCreatedAt);
+        updateCreatedAt(secondOrder.getId(), sameCreatedAt);
+
+        OrderPageResult<CheckoutOrderSummaryView> descResult = checkoutOrderQueryPort.findOrderSummariesByUserId(
+                buyer.getId(),
+                new OrderPageRequest(0, 20, OrderQuerySort.CREATED_AT_DESC)
+        );
+        OrderPageResult<CheckoutOrderSummaryView> ascResult = checkoutOrderQueryPort.findOrderSummariesByUserId(
+                buyer.getId(),
+                new OrderPageRequest(0, 20, OrderQuerySort.CREATED_AT_ASC)
+        );
+
+        assertThat(descResult.content())
+                .extracting(CheckoutOrderSummaryView::orderId)
+                .containsExactly(secondOrder.getId(), firstOrder.getId());
+        assertThat(ascResult.content())
+                .extracting(CheckoutOrderSummaryView::orderId)
+                .containsExactly(firstOrder.getId(), secondOrder.getId());
+    }
+
     private User createUser(String email, String nickname) {
         return userJpaRepository.saveAndFlush(User.createUser(email, "encoded-password", nickname));
     }
@@ -221,5 +272,14 @@ class OrderStoreJpaAdapterIntegrationTest {
                 "https://cdn.example.com/" + name + ".jpg"
         );
         return productJpaRepository.saveAndFlush(product);
+    }
+
+    private void updateCreatedAt(Long checkoutOrderId, LocalDateTime createdAt) {
+        jdbcTemplate.update(
+                "update checkout_order set created_at = ?, updated_at = ? where id = ?",
+                Timestamp.valueOf(createdAt),
+                Timestamp.valueOf(createdAt),
+                checkoutOrderId
+        );
     }
 }

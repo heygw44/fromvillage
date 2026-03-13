@@ -171,6 +171,75 @@ class OrderQueryIntegrationTest {
     }
 
     @Test
+    @DisplayName("내 주문 목록 조회는 createdAt 오름차순 정렬을 허용한다")
+    void ownOrdersAllowCreatedAtAscSort() throws Exception {
+        User seller = userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));
+        User buyer = userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Product potato = productRepository.saveAndFlush(createProduct(seller, "감자", 12000L));
+
+        CheckoutOrder firstOrder = checkoutOrderRepository.saveAndFlush(createCompletedOrder(
+                buyer,
+                List.of(SellerOrder.create(seller, List.of(OrderItem.create(potato, 1)))),
+                LocalDateTime.of(2026, 3, 13, 10, 0)
+        ));
+        CheckoutOrder secondOrder = checkoutOrderRepository.saveAndFlush(createCompletedOrder(
+                buyer,
+                List.of(SellerOrder.create(seller, List.of(OrderItem.create(potato, 2)))),
+                LocalDateTime.of(2026, 3, 13, 11, 0)
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .cookie(userSession)
+                        .param("sort", "createdAt,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].orderId").value(firstOrder.getId()))
+                .andExpect(jsonPath("$.data.content[1].orderId").value(secondOrder.getId()));
+    }
+
+    @Test
+    @DisplayName("내 주문 목록 조회는 createdAt 외의 정렬 키를 허용하지 않는다")
+    void ownOrdersRejectUnsupportedSort() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .cookie(userSession)
+                        .param("sort", "id,asc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @DisplayName("내 주문 목록 조회는 복수 정렬 키를 허용하지 않는다")
+    void ownOrdersRejectMultipleSorts() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .cookie(userSession)
+                        .param("sort", "createdAt,desc", "id,asc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     @DisplayName("SELLER는 내 주문 목록을 조회할 수 없다")
     void sellerCannotGetOwnOrders() throws Exception {
         userRepository.saveAndFlush(createSeller("seller@example.com", "판매자"));

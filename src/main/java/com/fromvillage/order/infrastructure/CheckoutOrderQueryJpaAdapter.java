@@ -57,8 +57,14 @@ public class CheckoutOrderQueryJpaAdapter implements CheckoutOrderQueryPort {
 
     private Sort toSort(OrderQuerySort sort) {
         return switch (sort) {
-            case CREATED_AT_DESC -> Sort.by(Sort.Direction.DESC, "createdAt");
-            case CREATED_AT_ASC -> Sort.by(Sort.Direction.ASC, "createdAt");
+            case CREATED_AT_DESC -> Sort.by(
+                    Sort.Order.desc("createdAt"),
+                    Sort.Order.desc("id")
+            );
+            case CREATED_AT_ASC -> Sort.by(
+                    Sort.Order.asc("createdAt"),
+                    Sort.Order.asc("id")
+            );
         };
     }
 }

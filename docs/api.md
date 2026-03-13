@@ -745,7 +745,9 @@ null
 - `GET /api/v1/orders`
 - `USER`
 - `page`, `size`, `sort` 지원
-- 기본 정렬은 `createdAt,desc`
+- `sort`는 `createdAt,desc`, `createdAt,asc`만 허용한다.
+- `sort`를 생략하면 기본 정렬은 `createdAt,desc`다.
+- 여러 `sort` 파라미터를 함께 보내면 `400 Bad Request`와 `VALIDATION_ERROR`로 거절한다.
 - 응답은 고객 관점 `checkout_order` 요약 목록을 반환한다.
 
 성공 응답 데이터 예시:
@@ -788,6 +790,7 @@ null
 
 - 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
 - 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 허용되지 않은 정렬 키 또는 복수 정렬 파라미터는 `400 Bad Request` + `VALIDATION_ERROR`
 
 ### 8.4 내 주문 상세 조회
 
