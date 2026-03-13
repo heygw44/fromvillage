@@ -86,6 +86,8 @@ class OrderStoreJpaAdapterIntegrationTest {
         assertThat(saved.getUpdatedAt()).isNotNull();
 
         CheckoutOrder found = checkoutOrderQueryPort.findDetailByOrderNumber(saved.getOrderNumber()).orElseThrow();
+        assertThat(checkoutOrderQueryPort.findDetailByOrderNumber("ORD-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"))
+                .isEmpty();
 
         assertThat(found.getSellerOrders()).hasSize(2);
         assertThat(found.getTotalAmount()).isEqualTo(32000L);
