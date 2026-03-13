@@ -24,7 +24,9 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Table(name = "checkout_order")
@@ -35,6 +37,9 @@ public class CheckoutOrder extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "order_number", nullable = false, unique = true, length = 40, updatable = false)
+    private String orderNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -63,6 +68,7 @@ public class CheckoutOrder extends BaseTimeEntity {
     private List<SellerOrder> sellerOrders = new ArrayList<>();
 
     private CheckoutOrder(User user, List<SellerOrder> sellerOrders) {
+        this.orderNumber = generateOrderNumber();
         this.user = Objects.requireNonNull(user);
         this.status = OrderStatus.CREATED;
         this.completedAt = null;
@@ -126,5 +132,9 @@ public class CheckoutOrder extends BaseTimeEntity {
         return sellerOrders.stream()
                 .map(SellerOrder::getDiscountAmount)
                 .reduce(0L, Math::addExact);
+    }
+
+    private static String generateOrderNumber() {
+        return "ORD-" + UUID.randomUUID().toString().replace("-", "").toUpperCase(Locale.ROOT);
     }
 }

@@ -5,7 +5,7 @@ import com.fromvillage.order.application.OrderSummary;
 import java.time.LocalDateTime;
 
 public record OrderSummaryResponse(
-        Long orderId,
+        String orderNumber,
         String status,
         Integer sellerOrderCount,
         Long totalAmount,
@@ -18,7 +18,7 @@ public record OrderSummaryResponse(
 
     public static OrderSummaryResponse from(OrderSummary summary) {
         return new OrderSummaryResponse(
-                summary.orderId(),
+                summary.orderNumber(),
                 summary.status().name(),
                 summary.sellerOrderCount(),
                 summary.totalAmount(),

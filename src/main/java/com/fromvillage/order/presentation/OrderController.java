@@ -11,6 +11,7 @@ import com.fromvillage.order.application.OrderQueryService;
 import com.fromvillage.order.application.OrderSummary;
 import com.fromvillage.order.application.OrderSummaryPage;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,6 +31,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/orders")
 public class OrderController {
 
+    private static final String ORDER_NUMBER_PATTERN = "^ORD-[0-9A-F]{32}$";
+
     private final OrderCheckoutService orderCheckoutService;
     private final OrderDirectCheckoutService orderDirectCheckoutService;
     private final OrderQueryService orderQueryService;
@@ -44,21 +47,25 @@ public class OrderController {
         return ApiResponse.success(OrderSummaryPageResponse.from(page));
     }
 
-    @GetMapping("/{orderId}")
+    @GetMapping("/{orderNumber}")
     public ApiResponse<OrderDetailResponse> getOrder(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @PathVariable Long orderId
+            @PathVariable
+            @Pattern(regexp = ORDER_NUMBER_PATTERN, message = "주문번호 형식이 올바르지 않습니다.")
+            String orderNumber
     ) {
-        OrderDetail detail = orderQueryService.getOrder(authenticatedUser.getUserId(), orderId);
+        OrderDetail detail = orderQueryService.getOrder(authenticatedUser.getUserId(), orderNumber);
         return ApiResponse.success(OrderDetailResponse.from(detail));
     }
 
-    @PostMapping("/{orderId}/cancel")
+    @PostMapping("/{orderNumber}/cancel")
     public ApiResponse<OrderSummaryResponse> cancelOrder(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @PathVariable Long orderId
+            @PathVariable
+            @Pattern(regexp = ORDER_NUMBER_PATTERN, message = "주문번호 형식이 올바르지 않습니다.")
+            String orderNumber
     ) {
-        OrderSummary summary = orderCancelService.cancel(authenticatedUser.getUserId(), orderId);
+        OrderSummary summary = orderCancelService.cancel(authenticatedUser.getUserId(), orderNumber);
         return ApiResponse.success(OrderSummaryResponse.from(summary));
     }
 

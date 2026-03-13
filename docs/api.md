@@ -676,7 +676,7 @@ null
 
 ```json
 {
-  "orderId": 1,
+  "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
   "status": "COMPLETED",
   "sellerOrderCount": 2,
   "totalAmount": 107000,
@@ -721,7 +721,7 @@ null
 
 ```json
 {
-  "orderId": 2,
+  "orderNumber": "ORD-77CC2BE247A84AADB13EC1B2AFC3C4A1",
   "status": "COMPLETED",
   "sellerOrderCount": 1,
   "totalAmount": 44000,
@@ -756,7 +756,7 @@ null
 {
   "content": [
     {
-      "orderId": 2,
+      "orderNumber": "ORD-77CC2BE247A84AADB13EC1B2AFC3C4A1",
       "status": "COMPLETED",
       "sellerOrderCount": 1,
       "totalAmount": 45000,
@@ -767,7 +767,7 @@ null
       "createdAt": "2026-03-13T11:00:00"
     },
     {
-      "orderId": 1,
+      "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
       "status": "COMPLETED",
       "sellerOrderCount": 2,
       "totalAmount": 32000,
@@ -794,16 +794,18 @@ null
 
 ### 8.4 내 주문 상세 조회
 
-- `GET /api/v1/orders/{orderId}`
+- `GET /api/v1/orders/{orderNumber}`
 - 고객 관점 `checkout_order` 상세를 조회한다.
 - 본인 주문 `USER`
 - 하위 `seller_order`와 `order_item` 스냅샷을 함께 반환한다.
+- `orderNumber`는 `ORD-` + 32자리 대문자 16진수 형식이어야 한다.
+- 고객용 상세 응답에서는 `seller_order`, `order_item`, `product`, `seller`의 내부 PK를 노출하지 않는다.
 
 성공 응답 데이터 예시:
 
 ```json
 {
-  "orderId": 1,
+  "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
   "status": "COMPLETED",
   "totalAmount": 32000,
   "discountAmount": 0,
@@ -813,8 +815,6 @@ null
   "createdAt": "2026-03-13T10:00:00",
   "sellerOrders": [
     {
-      "sellerOrderId": 11,
-      "sellerId": 3,
       "sellerNickname": "판매자1",
       "status": "COMPLETED",
       "totalAmount": 24000,
@@ -824,8 +824,6 @@ null
       "canceledAt": null,
       "orderItems": [
         {
-          "orderItemId": 101,
-          "productId": 5,
           "productNameSnapshot": "감자",
           "productPriceSnapshot": 12000,
           "quantity": 2,
@@ -840,17 +838,19 @@ null
 실패 응답 규칙:
 
 - 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 주문번호 형식 오류는 `400 Bad Request` + `VALIDATION_ERROR`
 - 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
 - 타인 주문 상세 조회는 `403 Forbidden` + `AUTH_FORBIDDEN`
 - 존재하지 않는 주문은 `404 Not Found` + `ORDER_NOT_FOUND`
 
 ### 8.5 주문 취소
 
-- `POST /api/v1/orders/{orderId}/cancel`
+- `POST /api/v1/orders/{orderNumber}/cancel`
 - 고객 관점 `checkout_order`를 기준으로 취소한다.
 - 본인 주문 `USER`
 - CSRF 토큰 필요
 - `COMPLETED` 상태 주문만 취소할 수 있다.
+- `orderNumber`는 `ORD-` + 32자리 대문자 16진수 형식이어야 한다.
 - 취소 시 하위의 모든 `seller_order`도 함께 `CANCELED` 처리된다.
 - 취소 시 각 `order_item.quantity`만큼 상품 재고를 복구한다.
 - 재고 복구 결과 1 이상이면 상품 상태는 같은 트랜잭션 안에서 `ON_SALE`로 복구된다.
@@ -859,7 +859,7 @@ null
 
 ```json
 {
-  "orderId": 1,
+  "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
   "status": "CANCELED",
   "sellerOrderCount": 2,
   "totalAmount": 32000,
@@ -874,6 +874,7 @@ null
 실패 응답 규칙:
 
 - 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 주문번호 형식 오류는 `400 Bad Request` + `VALIDATION_ERROR`
 - 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
 - CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
 - 타인 주문 취소는 `403 Forbidden` + `AUTH_FORBIDDEN`

@@ -43,9 +43,9 @@ public class OrderQueryService {
 
     @PreAuthorize("hasRole('USER')")
     @Transactional(readOnly = true)
-    public OrderDetail getOrder(Long userId, Long orderId) {
-        validateOwnership(userId, orderId);
-        CheckoutOrder checkoutOrder = checkoutOrderQueryPort.findDetailById(orderId)
+    public OrderDetail getOrder(Long userId, String orderNumber) {
+        validateOwnership(userId, orderNumber);
+        CheckoutOrder checkoutOrder = checkoutOrderQueryPort.findDetailByOrderNumber(orderNumber)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
         return OrderDetail.from(checkoutOrder);
     }
@@ -78,8 +78,8 @@ public class OrderQueryService {
         return order.isAscending() ? OrderQuerySort.CREATED_AT_ASC : OrderQuerySort.CREATED_AT_DESC;
     }
 
-    private void validateOwnership(Long userId, Long orderId) {
-        Long ownerId = checkoutOrderQueryPort.findOwnerIdById(orderId)
+    private void validateOwnership(Long userId, String orderNumber) {
+        Long ownerId = checkoutOrderQueryPort.findOwnerIdByOrderNumber(orderNumber)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         if (!Objects.equals(ownerId, userId)) {

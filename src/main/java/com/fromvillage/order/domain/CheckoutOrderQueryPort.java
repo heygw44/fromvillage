@@ -6,7 +6,7 @@ public interface CheckoutOrderQueryPort {
 
     OrderPageResult<CheckoutOrderSummaryView> findOrderSummariesByUserId(Long userId, OrderPageRequest pageRequest);
 
-    Optional<Long> findOwnerIdById(Long orderId);
+    Optional<Long> findOwnerIdByOrderNumber(String orderNumber);
 
-    Optional<CheckoutOrder> findDetailById(Long orderId);
+    Optional<CheckoutOrder> findDetailByOrderNumber(String orderNumber);
 }

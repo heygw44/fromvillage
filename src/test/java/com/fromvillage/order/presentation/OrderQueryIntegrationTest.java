@@ -133,9 +133,13 @@ class OrderQueryIntegrationTest {
                 .andExpect(jsonPath("$.data.totalElements").value(2))
                 .andExpect(jsonPath("$.data.totalPages").value(1))
                 .andExpect(jsonPath("$.data.hasNext").value(false))
-                .andExpect(jsonPath("$.data.content[?(@.orderId == %s)]", firstOrder.getId()).exists())
-                .andExpect(jsonPath("$.data.content[?(@.orderId == %s)]", secondOrder.getId()).exists())
-                .andExpect(jsonPath("$.data.content[?(@.orderId == %s)]", otherBuyerOrder.getId()).isEmpty());
+                .andExpect(jsonPath("$.data.content[?(@.orderNumber == '%s')]",
+                        orderNumber(firstOrder)).exists())
+                .andExpect(jsonPath("$.data.content[?(@.orderNumber == '%s')]",
+                        orderNumber(secondOrder)).exists())
+                .andExpect(jsonPath("$.data.content[?(@.orderNumber == '%s')]",
+                        orderNumber(otherBuyerOrder)).isEmpty())
+                .andExpect(jsonPath("$.data.content[0].orderId").doesNotExist());
     }
 
     @Test
@@ -166,8 +170,9 @@ class OrderQueryIntegrationTest {
         mockMvc.perform(get("/api/v1/orders")
                         .cookie(userSession))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].orderId").value(secondOrder.getId()))
-                .andExpect(jsonPath("$.data.content[1].orderId").value(firstOrder.getId()));
+                .andExpect(jsonPath("$.data.content[0].orderNumber").value(orderNumber(secondOrder)))
+                .andExpect(jsonPath("$.data.content[1].orderNumber").value(orderNumber(firstOrder)))
+                .andExpect(jsonPath("$.data.content[0].orderId").doesNotExist());
     }
 
     @Test
@@ -199,8 +204,9 @@ class OrderQueryIntegrationTest {
                         .cookie(userSession)
                         .param("sort", "createdAt,asc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].orderId").value(firstOrder.getId()))
-                .andExpect(jsonPath("$.data.content[1].orderId").value(secondOrder.getId()));
+                .andExpect(jsonPath("$.data.content[0].orderNumber").value(orderNumber(firstOrder)))
+                .andExpect(jsonPath("$.data.content[1].orderNumber").value(orderNumber(secondOrder)))
+                .andExpect(jsonPath("$.data.content[0].orderId").doesNotExist());
     }
 
     @Test
@@ -303,14 +309,19 @@ class OrderQueryIntegrationTest {
 
         Cookie userSession = login("buyer@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderId}", savedOrder.getId())
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", savedOrder.getOrderNumber())
                         .cookie(userSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.orderId").value(savedOrder.getId()))
+                .andExpect(jsonPath("$.data.orderNumber").value(orderNumber(savedOrder)))
+                .andExpect(jsonPath("$.data.orderId").doesNotExist())
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.sellerOrders.length()").value(2))
+                .andExpect(jsonPath("$.data.sellerOrders[0].sellerOrderId").doesNotExist())
+                .andExpect(jsonPath("$.data.sellerOrders[0].sellerId").doesNotExist())
+                .andExpect(jsonPath("$.data.sellerOrders[0].orderItems[0].orderItemId").doesNotExist())
+                .andExpect(jsonPath("$.data.sellerOrders[0].orderItems[0].productId").doesNotExist())
                 .andExpect(jsonPath("$.data.sellerOrders[*].orderItems[*].productNameSnapshot", hasItems("감자", "배추")))
                 .andExpect(jsonPath("$.data.sellerOrders[*].orderItems[*].quantity", hasItems(2, 1)));
     }
@@ -343,7 +354,7 @@ class OrderQueryIntegrationTest {
 
         Cookie userSession = login("buyer@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderId}", savedOrder.getId())
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", savedOrder.getOrderNumber())
                         .cookie(userSession))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false))
@@ -361,11 +372,29 @@ class OrderQueryIntegrationTest {
 
         Cookie userSession = login("buyer@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderId}", 99999L)
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                         .cookie(userSession))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("형식이 잘못된 주문번호로 주문 상세를 조회하면 400을 반환한다")
+    void userGetsBadRequestWhenOrderNumberFormatIsInvalid() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "invalid-order-number")
+                        .cookie(userSession))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("orderNumber"));
     }
 
     @Test
@@ -375,7 +404,7 @@ class OrderQueryIntegrationTest {
 
         Cookie sellerSession = login("seller@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderId}", 1L)
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
                         .cookie(sellerSession))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
@@ -392,7 +421,7 @@ class OrderQueryIntegrationTest {
 
         Cookie adminSession = login("admin@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderId}", 1L)
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
                         .cookie(adminSession))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
@@ -401,7 +430,7 @@ class OrderQueryIntegrationTest {
     @Test
     @DisplayName("미인증 사용자는 내 주문 상세를 조회할 수 없다")
     void unauthenticatedUserCannotGetOwnOrderDetail() throws Exception {
-        mockMvc.perform(get("/api/v1/orders/{orderId}", 1L))
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", "ORD-DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"));
     }
@@ -433,7 +462,7 @@ class OrderQueryIntegrationTest {
 
         Cookie userSession = login("buyer@example.com", "Password12!");
 
-        mockMvc.perform(get("/api/v1/orders/{orderId}", savedOrder.getId())
+        mockMvc.perform(get("/api/v1/orders/{orderNumber}", savedOrder.getOrderNumber())
                         .cookie(userSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("CANCELED"))
@@ -480,7 +509,7 @@ class OrderQueryIntegrationTest {
         Cookie userSession = login("buyer@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(userSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", savedOrder.getId())
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", savedOrder.getOrderNumber())
                         .cookie(userSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -488,7 +517,8 @@ class OrderQueryIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.orderId").value(savedOrder.getId()))
+                .andExpect(jsonPath("$.data.orderNumber").value(orderNumber(savedOrder)))
+                .andExpect(jsonPath("$.data.orderId").doesNotExist())
                 .andExpect(jsonPath("$.data.status").value("CANCELED"))
                 .andExpect(jsonPath("$.data.sellerOrderCount").value(2));
 
@@ -544,7 +574,7 @@ class OrderQueryIntegrationTest {
         Cookie userSession = login("buyer@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(userSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", savedOrder.getId())
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", savedOrder.getOrderNumber())
                         .cookie(userSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -580,7 +610,7 @@ class OrderQueryIntegrationTest {
 
         Cookie userSession = login("buyer@example.com", "Password12!");
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", savedOrder.getId())
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", savedOrder.getOrderNumber())
                         .cookie(userSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of())))
@@ -589,11 +619,33 @@ class OrderQueryIntegrationTest {
     }
 
     @Test
+    @DisplayName("형식이 잘못된 주문번호로 주문 취소를 요청하면 400을 반환한다")
+    void cancelRejectsInvalidOrderNumberFormat() throws Exception {
+        userRepository.saveAndFlush(User.createUser(
+                "buyer@example.com",
+                passwordEncoder.encode("Password12!"),
+                "구매자"
+        ));
+
+        Cookie userSession = login("buyer@example.com", "Password12!");
+        CsrfSession csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "invalid-order-number")
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token())
+                        .content(objectMapper.writeValueAsString(Map.of())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("orderNumber"));
+    }
+
+    @Test
     @DisplayName("미인증 사용자는 주문 취소 API에 접근할 수 없다")
     void unauthenticatedUserCannotCancelOrder() throws Exception {
         CsrfSession anonymousCsrfSession = fetchCsrfSession();
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", 1L)
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
                         .cookie(anonymousCsrfSession.sessionCookie())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(anonymousCsrfSession.headerName(), anonymousCsrfSession.token())
@@ -610,7 +662,7 @@ class OrderQueryIntegrationTest {
         Cookie sellerSession = login("seller@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(sellerSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", 1L)
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
                         .cookie(sellerSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -631,7 +683,7 @@ class OrderQueryIntegrationTest {
         Cookie adminSession = login("admin@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(adminSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", 1L)
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", "ORD-99999999999999999999999999999999")
                         .cookie(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -661,7 +713,7 @@ class OrderQueryIntegrationTest {
         Cookie userSession = login("buyer@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(userSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", createdOrder.getId())
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", createdOrder.getOrderNumber())
                         .cookie(userSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -697,7 +749,7 @@ class OrderQueryIntegrationTest {
         Cookie userSession = login("buyer@example.com", "Password12!");
         CsrfSession csrfSession = fetchCsrfSession(userSession);
 
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", canceledOrder.getId())
+        mockMvc.perform(post("/api/v1/orders/{orderNumber}/cancel", canceledOrder.getOrderNumber())
                         .cookie(userSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(csrfSession.headerName(), csrfSession.token())
@@ -751,6 +803,10 @@ class OrderQueryIntegrationTest {
         );
         seller.approveSeller(LocalDateTime.of(2026, 3, 12, 10, 0));
         return seller;
+    }
+
+    private String orderNumber(CheckoutOrder checkoutOrder) {
+        return checkoutOrder.getOrderNumber();
     }
 
     private Cookie login(String email, String password) throws Exception {

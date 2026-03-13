@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -36,30 +36,32 @@ class OrderQueryServiceTest {
     @DisplayName("타인 주문 상세 조회는 상세 그래프를 읽기 전에 거절한다")
     void getOrderRejectsAnotherUsersOrderBeforeLoadingDetail() {
         OrderQueryService orderQueryService = new OrderQueryService(checkoutOrderQueryPort);
+        String orderNumber = "ORD-20000000000000000000000000000000";
 
-        given(checkoutOrderQueryPort.findOwnerIdById(200L)).willReturn(Optional.of(101L));
+        given(checkoutOrderQueryPort.findOwnerIdByOrderNumber(orderNumber)).willReturn(Optional.of(101L));
 
-        assertThatThrownBy(() -> orderQueryService.getOrder(100L, 200L))
+        assertThatThrownBy(() -> orderQueryService.getOrder(100L, orderNumber))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.AUTH_FORBIDDEN);
 
-        verify(checkoutOrderQueryPort, never()).findDetailById(anyLong());
+        verify(checkoutOrderQueryPort, never()).findDetailByOrderNumber(anyString());
     }
 
     @Test
     @DisplayName("존재하지 않는 주문 상세 조회는 상세 그래프를 읽기 전에 404를 반환한다")
     void getOrderRejectsMissingOrderBeforeLoadingDetail() {
         OrderQueryService orderQueryService = new OrderQueryService(checkoutOrderQueryPort);
+        String orderNumber = "ORD-99900000000000000000000000000000";
 
-        given(checkoutOrderQueryPort.findOwnerIdById(999L)).willReturn(Optional.empty());
+        given(checkoutOrderQueryPort.findOwnerIdByOrderNumber(orderNumber)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderQueryService.getOrder(100L, 999L))
+        assertThatThrownBy(() -> orderQueryService.getOrder(100L, orderNumber))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ORDER_NOT_FOUND);
 
-        verify(checkoutOrderQueryPort, never()).findDetailById(anyLong());
+        verify(checkoutOrderQueryPort, never()).findDetailByOrderNumber(anyString());
     }
 
     @Test
@@ -78,13 +80,15 @@ class OrderQueryServiceTest {
                 )
         );
 
-        given(checkoutOrderQueryPort.findOwnerIdById(200L)).willReturn(Optional.of(100L));
-        given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
+        given(checkoutOrderQueryPort.findOwnerIdByOrderNumber(checkoutOrder.getOrderNumber()))
+                .willReturn(Optional.of(100L));
+        given(checkoutOrderQueryPort.findDetailByOrderNumber(checkoutOrder.getOrderNumber()))
+                .willReturn(Optional.of(checkoutOrder));
 
-        orderQueryService.getOrder(100L, 200L);
+        orderQueryService.getOrder(100L, checkoutOrder.getOrderNumber());
 
-        verify(checkoutOrderQueryPort).findOwnerIdById(200L);
-        verify(checkoutOrderQueryPort).findDetailById(200L);
+        verify(checkoutOrderQueryPort).findOwnerIdByOrderNumber(checkoutOrder.getOrderNumber());
+        verify(checkoutOrderQueryPort).findDetailByOrderNumber(checkoutOrder.getOrderNumber());
     }
 
     private CheckoutOrder completedOrder(Long orderId, User buyer, List<SellerOrder> sellerOrders) {

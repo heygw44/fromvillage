@@ -14,7 +14,7 @@ public interface CheckoutOrderJpaRepository extends JpaRepository<CheckoutOrder,
     @Query(
             value = """
                     select new com.fromvillage.order.domain.CheckoutOrderSummaryView(
-                        checkoutOrder.id,
+                        checkoutOrder.orderNumber,
                         checkoutOrder.status,
                         count(sellerOrder.id),
                         checkoutOrder.totalAmount,
@@ -28,6 +28,7 @@ public interface CheckoutOrderJpaRepository extends JpaRepository<CheckoutOrder,
                     left join checkoutOrder.sellerOrders sellerOrder
                     where checkoutOrder.user.id = :userId
                     group by
+                        checkoutOrder.orderNumber,
                         checkoutOrder.id,
                         checkoutOrder.status,
                         checkoutOrder.totalAmount,
@@ -48,9 +49,9 @@ public interface CheckoutOrderJpaRepository extends JpaRepository<CheckoutOrder,
     @Query("""
             select checkoutOrder.user.id
             from CheckoutOrder checkoutOrder
-            where checkoutOrder.id = :checkoutOrderId
+            where checkoutOrder.orderNumber = :orderNumber
             """)
-    Optional<Long> findOwnerIdById(Long checkoutOrderId);
+    Optional<Long> findOwnerIdByOrderNumber(String orderNumber);
 
     @Query("""
             select distinct checkoutOrder
@@ -60,4 +61,13 @@ public interface CheckoutOrderJpaRepository extends JpaRepository<CheckoutOrder,
             where checkoutOrder.id = :checkoutOrderId
             """)
     Optional<CheckoutOrder> findByIdWithSellerOrders(Long checkoutOrderId);
+
+    @Query("""
+            select distinct checkoutOrder
+            from CheckoutOrder checkoutOrder
+            left join fetch checkoutOrder.sellerOrders sellerOrder
+            left join fetch sellerOrder.seller seller
+            where checkoutOrder.orderNumber = :orderNumber
+            """)
+    Optional<CheckoutOrder> findByOrderNumberWithSellerOrders(String orderNumber);
 }

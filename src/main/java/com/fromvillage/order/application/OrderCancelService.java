@@ -23,9 +23,9 @@ public class OrderCancelService {
 
     @PreAuthorize("hasRole('USER')")
     @Transactional
-    public OrderSummary cancel(Long userId, Long orderId) {
-        validateOwnership(userId, orderId);
-        CheckoutOrder checkoutOrder = checkoutOrderQueryPort.findDetailById(orderId)
+    public OrderSummary cancel(Long userId, String orderNumber) {
+        validateOwnership(userId, orderNumber);
+        CheckoutOrder checkoutOrder = checkoutOrderQueryPort.findDetailByOrderNumber(orderNumber)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         checkoutOrder.cancel(LocalDateTime.now(clock));
@@ -44,8 +44,8 @@ public class OrderCancelService {
         orderItem.getProduct().restoreStock(orderItem.getQuantity());
     }
 
-    private void validateOwnership(Long userId, Long orderId) {
-        Long ownerId = checkoutOrderQueryPort.findOwnerIdById(orderId)
+    private void validateOwnership(Long userId, String orderNumber) {
+        Long ownerId = checkoutOrderQueryPort.findOwnerIdByOrderNumber(orderNumber)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         if (!Objects.equals(ownerId, userId)) {
