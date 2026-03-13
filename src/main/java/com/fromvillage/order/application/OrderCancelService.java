@@ -3,7 +3,7 @@ package com.fromvillage.order.application;
 import com.fromvillage.common.exception.BusinessException;
 import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.order.domain.CheckoutOrder;
-import com.fromvillage.order.domain.CheckoutOrderStore;
+import com.fromvillage.order.domain.CheckoutOrderQueryPort;
 import com.fromvillage.order.domain.OrderItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,13 +18,13 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class OrderCancelService {
 
-    private final CheckoutOrderStore checkoutOrderStore;
+    private final CheckoutOrderQueryPort checkoutOrderQueryPort;
     private final Clock clock;
 
     @PreAuthorize("hasRole('USER')")
     @Transactional
     public OrderSummary cancel(Long userId, Long orderId) {
-        CheckoutOrder checkoutOrder = checkoutOrderStore.findById(orderId)
+        CheckoutOrder checkoutOrder = checkoutOrderQueryPort.findDetailById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         if (!Objects.equals(checkoutOrder.getUser().getId(), userId)) {

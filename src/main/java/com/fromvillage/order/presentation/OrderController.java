@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/orders")
-public class OrderCheckoutController {
+public class OrderController {
 
     private final OrderCheckoutService orderCheckoutService;
     private final OrderDirectCheckoutService orderDirectCheckoutService;

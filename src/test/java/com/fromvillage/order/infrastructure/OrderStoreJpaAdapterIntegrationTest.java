@@ -2,6 +2,11 @@ package com.fromvillage.order.infrastructure;
 
 import com.fromvillage.common.config.JpaAuditingConfig;
 import com.fromvillage.order.domain.CheckoutOrder;
+import com.fromvillage.order.domain.CheckoutOrderQueryPort;
+import com.fromvillage.order.domain.OrderPageRequest;
+import com.fromvillage.order.domain.OrderPageResult;
+import com.fromvillage.order.domain.OrderQuerySort;
+import com.fromvillage.order.domain.CheckoutOrderSummaryView;
 import com.fromvillage.order.domain.CheckoutOrderStore;
 import com.fromvillage.order.domain.OrderItem;
 import com.fromvillage.order.domain.SellerOrder;
@@ -30,12 +35,16 @@ import static org.assertj.core.api.Assertions.assertThat;
         TestContainersConfig.class,
         JpaAuditingConfig.class,
         CheckoutOrderStoreJpaAdapter.class,
+        CheckoutOrderQueryJpaAdapter.class,
         SellerOrderStoreJpaAdapter.class
 })
 class OrderStoreJpaAdapterIntegrationTest {
 
     @Autowired
     private CheckoutOrderStore checkoutOrderStore;
+
+    @Autowired
+    private CheckoutOrderQueryPort checkoutOrderQueryPort;
 
     @Autowired
     private SellerOrderStore sellerOrderStore;
@@ -70,7 +79,7 @@ class OrderStoreJpaAdapterIntegrationTest {
         assertThat(saved.getCreatedAt()).isNotNull();
         assertThat(saved.getUpdatedAt()).isNotNull();
 
-        CheckoutOrder found = checkoutOrderStore.findById(saved.getId()).orElseThrow();
+        CheckoutOrder found = checkoutOrderQueryPort.findDetailById(saved.getId()).orElseThrow();
 
         assertThat(found.getSellerOrders()).hasSize(2);
         assertThat(found.getTotalAmount()).isEqualTo(32000L);
@@ -136,6 +145,59 @@ class OrderStoreJpaAdapterIntegrationTest {
         assertThat(sellerOrders.getFirst().getOrderItems()).hasSize(1);
         assertThat(sellerOrders.getFirst().getOrderItems().getFirst().getProductNameSnapshot()).isEqualTo("감자");
         assertThat(sellerOrderStore.findAllBySellerId(Long.MAX_VALUE)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("주문 요약 페이지 조회는 사용자 필터와 판매자 주문 수를 함께 반환한다")
+    void findOrderSummariesByUserId() {
+        User buyer = createUser("buyer@example.com", "buyer");
+        User otherBuyer = createUser("other@example.com", "other");
+        User seller1 = createSeller("seller1@example.com", "seller1");
+        User seller2 = createSeller("seller2@example.com", "seller2");
+
+        Product potato = createProduct(seller1, "감자", 12000L);
+        Product cabbage = createProduct(seller2, "배추", 8000L);
+        Product mackerel = createProduct(seller2, "고등어", 15000L);
+
+        checkoutOrderStore.save(
+                CheckoutOrder.create(
+                        buyer,
+                        List.of(
+                                SellerOrder.create(seller1, List.of(OrderItem.create(potato, 2))),
+                                SellerOrder.create(seller2, List.of(OrderItem.create(cabbage, 1)))
+                        )
+                )
+        );
+        checkoutOrderStore.save(
+                CheckoutOrder.create(
+                        buyer,
+                        List.of(
+                                SellerOrder.create(seller2, List.of(OrderItem.create(mackerel, 1)))
+                        )
+                )
+        );
+        checkoutOrderStore.save(
+                CheckoutOrder.create(
+                        otherBuyer,
+                        List.of(
+                                SellerOrder.create(seller1, List.of(OrderItem.create(potato, 1)))
+                        )
+                )
+        );
+
+        OrderPageResult<CheckoutOrderSummaryView> result = checkoutOrderQueryPort.findOrderSummariesByUserId(
+                buyer.getId(),
+                new OrderPageRequest(0, 20, OrderQuerySort.CREATED_AT_DESC)
+        );
+
+        assertThat(result.totalElements()).isEqualTo(2);
+        assertThat(result.content()).hasSize(2);
+        assertThat(result.content())
+                .extracting(CheckoutOrderSummaryView::sellerOrderCount)
+                .containsExactly(1L, 2L);
+        assertThat(result.content())
+                .extracting(CheckoutOrderSummaryView::totalAmount)
+                .containsExactly(15000L, 32000L);
     }
 
     private User createUser(String email, String nickname) {

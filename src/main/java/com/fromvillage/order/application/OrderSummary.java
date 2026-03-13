@@ -1,6 +1,7 @@
 package com.fromvillage.order.application;
 
 import com.fromvillage.order.domain.CheckoutOrder;
+import com.fromvillage.order.domain.CheckoutOrderSummaryView;
 import com.fromvillage.order.domain.OrderStatus;
 
 import java.time.LocalDateTime;
@@ -28,6 +29,20 @@ public record OrderSummary(
                 checkoutOrder.getCompletedAt(),
                 checkoutOrder.getCanceledAt(),
                 checkoutOrder.getCreatedAt()
+        );
+    }
+
+    public static OrderSummary from(CheckoutOrderSummaryView summaryView) {
+        return new OrderSummary(
+                summaryView.orderId(),
+                summaryView.status(),
+                Math.toIntExact(summaryView.sellerOrderCount()),
+                summaryView.totalAmount(),
+                summaryView.discountAmount(),
+                summaryView.finalAmount(),
+                summaryView.completedAt(),
+                summaryView.canceledAt(),
+                summaryView.createdAt()
         );
     }
 }

@@ -1,6 +1,6 @@
 package com.fromvillage.order.application;
 
-import org.springframework.data.domain.Page;
+import com.fromvillage.order.domain.OrderPageResult;
 
 import java.util.List;
 
@@ -13,13 +13,13 @@ public record OrderSummaryPage(
         boolean hasNext
 ) {
 
-    public static OrderSummaryPage from(Page<OrderSummary> page) {
+    public static OrderSummaryPage from(OrderPageResult<OrderSummary> page) {
         return new OrderSummaryPage(
-                page.getContent(),
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
+                page.content(),
+                page.page(),
+                page.size(),
+                page.totalElements(),
+                page.totalPages(),
                 page.hasNext()
         );
     }

@@ -65,6 +65,7 @@ Context7 기준으로도 Spring Modulith는 비즈니스 도메인 기준 모듈
 - `application`은 필요한 저장 연산을 `domain` 포트 인터페이스에 의존한다.
 - `infrastructure`는 Spring Data JPA 저장소와 어댑터를 통해 그 포트를 구현한다.
 - 회원가입은 `SignupService -> user.domain.UserStore -> user.infrastructure.UserStoreJpaAdapter -> UserJpaRepository` 흐름으로 연결한다.
+- 조회 포트가 페이지네이션을 다뤄야 할 때도 `domain` 포트에는 Spring Data 타입을 직접 노출하지 않고, 도메인 전용 요청/결과 타입으로 감싼다.
 
 핵심 원칙은 다음과 같다.
 
@@ -140,6 +141,7 @@ MVP에서는 remember-me 자동 로그인 기능은 포함하지 않는다.
 
 트랜잭션 경계는 `application service`에서 관리한다.
 여러 리포지토리와 도메인 규칙이 함께 동작하는 유스케이스는 서비스 단위에서 하나의 트랜잭션으로 묶는다.
+읽기 전용 주문 조회도 예외 없이 application service에서 `readOnly` 트랜잭션을 열고, infrastructure 어댑터는 그 트랜잭션 안에서 필요한 조회만 수행한다.
 
 대표 사례는 다음과 같다.
 
@@ -201,6 +203,9 @@ Redis는 동시성 제어의 전면, DB는 최종 기준 데이터 저장소 역
 
 `order_item`은 상품 스냅샷을 저장해, 상품 정보가 변경되거나 soft delete되어도 과거 주문 이력이 흔들리지 않도록 한다.
 `checkout_order` 취소 시에는 하위의 모든 `seller_order`가 함께 취소되어 주문/재고/쿠폰 정합성을 유지한다.
+내 주문 목록 조회는 페이지 쿼리에서 `seller_order` 수를 함께 계산하는 summary projection을 사용해 `sellerOrders.size()` 기반 지연 로딩 N+1을 피한다.
+내 주문 상세 조회와 주문 취소는 `checkout_order -> seller_order -> order_item.product`를 한 번에 두 bag 컬렉션으로 fetch join 하지 않고, `checkout_order + seller_order` 1차 조회 후 `seller_order + order_item.product` 보강 조회를 같은 영속성 컨텍스트에서 수행한다.
+이 패턴은 Hibernate의 다중 bag fetch 제약을 피하면서도 상세 응답과 재고 복구에 필요한 그래프를 명시적으로 적재하기 위한 것이다.
 현재 `M3-05` 단계까지는 쿠폰 연동 전이므로, 체크아웃과 바로 구매 모두 할인 금액 없이 주문을 생성하고 쿠폰 FK 연결은 후속 이슈에서 닫는다.
 
 ## 10. 정산 배치 아키텍처

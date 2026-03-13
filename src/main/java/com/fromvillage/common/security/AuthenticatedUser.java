@@ -54,25 +54,25 @@ public class AuthenticatedUser implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        // MVP currently has no account expiration lifecycle in the User aggregate.
+        // 현재 범위에서는 계정 만료 주기를 따로 두지 않는다.
         return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        // Login lock is introduced in a later milestone, so principal-level lock state is not modeled yet.
+        // 로그인 잠금은 별도 마일스톤에서 다루므로, 지금은 인증 주체에 잠금 상태를 싣지 않는다.
         return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        // Password expiration is outside the current MVP scope.
+        // 비밀번호 만료 정책은 현재 범위에 포함하지 않는다.
         return true;
     }
 
     @Override
     public boolean isEnabled() {
-        // User deactivation/withdrawal is not implemented in the current MVP, so all persisted users are enabled.
+        // 현재 범위에서는 회원 비활성화나 탈퇴를 구현하지 않아 저장된 회원을 모두 활성 상태로 본다.
         return true;
     }
 }

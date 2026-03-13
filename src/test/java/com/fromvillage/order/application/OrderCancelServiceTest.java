@@ -3,7 +3,7 @@ package com.fromvillage.order.application;
 import com.fromvillage.common.exception.BusinessException;
 import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.order.domain.CheckoutOrder;
-import com.fromvillage.order.domain.CheckoutOrderStore;
+import com.fromvillage.order.domain.CheckoutOrderQueryPort;
 import com.fromvillage.order.domain.OrderItem;
 import com.fromvillage.order.domain.OrderStatus;
 import com.fromvillage.order.domain.SellerOrder;
@@ -34,7 +34,7 @@ import static org.mockito.BDDMockito.given;
 class OrderCancelServiceTest {
 
     @Mock
-    private CheckoutOrderStore checkoutOrderStore;
+    private CheckoutOrderQueryPort checkoutOrderQueryPort;
 
     private Clock clock;
     private OrderCancelService orderCancelService;
@@ -42,7 +42,7 @@ class OrderCancelServiceTest {
     @BeforeEach
     void setUp() {
         clock = Clock.fixed(Instant.parse("2026-03-13T03:00:00Z"), ZoneOffset.UTC);
-        orderCancelService = new OrderCancelService(checkoutOrderStore, clock);
+        orderCancelService = new OrderCancelService(checkoutOrderQueryPort, clock);
     }
 
     @Test
@@ -68,7 +68,7 @@ class OrderCancelServiceTest {
                 LocalDateTime.of(2026, 3, 13, 10, 0)
         );
 
-        given(checkoutOrderStore.findById(200L)).willReturn(Optional.of(checkoutOrder));
+        given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
 
         OrderSummary result = orderCancelService.cancel(100L, 200L);
 
@@ -108,7 +108,7 @@ class OrderCancelServiceTest {
                 LocalDateTime.of(2026, 3, 13, 10, 0)
         );
 
-        given(checkoutOrderStore.findById(200L)).willReturn(Optional.of(checkoutOrder));
+        given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 200L))
                 .isInstanceOf(BusinessException.class)
@@ -119,7 +119,7 @@ class OrderCancelServiceTest {
     @Test
     @DisplayName("존재하지 않는 주문은 취소할 수 없다")
     void cancelRejectsMissingOrder() {
-        given(checkoutOrderStore.findById(999L)).willReturn(Optional.empty());
+        given(checkoutOrderQueryPort.findDetailById(999L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 999L))
                 .isInstanceOf(BusinessException.class)
@@ -143,7 +143,7 @@ class OrderCancelServiceTest {
         );
         ReflectionTestUtils.setField(checkoutOrder, "id", 200L);
 
-        given(checkoutOrderStore.findById(200L)).willReturn(Optional.of(checkoutOrder));
+        given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 200L))
                 .isInstanceOf(BusinessException.class)
@@ -171,7 +171,7 @@ class OrderCancelServiceTest {
         );
         checkoutOrder.cancel(LocalDateTime.of(2026, 3, 13, 11, 0));
 
-        given(checkoutOrderStore.findById(200L)).willReturn(Optional.of(checkoutOrder));
+        given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 200L))
                 .isInstanceOf(BusinessException.class)

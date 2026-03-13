@@ -3,23 +3,23 @@ package com.fromvillage.common.exception;
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
-    // Validation
+    // 입력 검증
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "입력한 내용을 다시 확인해 주세요."),
 
-    // Authentication / Authorization
+    // 인증 / 인가
     AUTH_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_UNAUTHORIZED", "로그인이 필요합니다."),
     AUTH_SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH_SESSION_EXPIRED", "로그인이 만료되었습니다. 다시 로그인해 주세요."),
     AUTH_CSRF_INVALID(HttpStatus.FORBIDDEN, "AUTH_CSRF_INVALID", "요청을 다시 시도해 주세요."),
     AUTH_FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_FORBIDDEN", "접근 권한이 없습니다."),
     AUTH_LOGIN_TEMPORARILY_LOCKED(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_TEMPORARILY_LOCKED", "로그인 시도가 잠시 제한되었습니다. 잠시 후 다시 시도해 주세요."),
 
-    // User
+    // 회원
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
     USER_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "USER_EMAIL_ALREADY_EXISTS", "이미 사용 중인 이메일입니다."),
     USER_ALREADY_SELLER(HttpStatus.CONFLICT, "USER_ALREADY_SELLER", "이미 판매자 권한이 부여된 계정입니다."),
     SELLER_APPROVAL_NOT_ALLOWED(HttpStatus.CONFLICT, "SELLER_APPROVAL_NOT_ALLOWED", "판매자 권한은 일반 회원에게만 부여할 수 있습니다."),
 
-    // Product
+    // 상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_NOT_FOUND", "상품을 찾을 수 없습니다."),
     PRODUCT_SELLER_ROLE_REQUIRED(HttpStatus.BAD_REQUEST, "PRODUCT_SELLER_ROLE_REQUIRED", "상품은 판매자 계정으로만 등록할 수 있습니다."),
     PRODUCT_PRICE_INVALID(HttpStatus.BAD_REQUEST, "PRODUCT_PRICE_INVALID", "상품 가격은 0보다 커야 합니다."),
@@ -28,12 +28,12 @@ public enum ErrorCode {
     PRODUCT_STOCK_QUANTITY_OVERFLOW(HttpStatus.BAD_REQUEST, "PRODUCT_STOCK_QUANTITY_OVERFLOW", "상품 재고 범위를 초과했습니다."),
     PRODUCT_IMAGE_URL_INVALID(HttpStatus.BAD_REQUEST, "PRODUCT_IMAGE_URL_INVALID", "상품 이미지는 https 주소만 사용할 수 있습니다."),
 
-    // Cart
+    // 장바구니
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_ITEM_NOT_FOUND", "장바구니 항목을 찾을 수 없습니다."),
     CART_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "CART_QUANTITY_INVALID", "장바구니 수량은 1개 이상이어야 합니다."),
     CART_PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "CART_PRODUCT_UNAVAILABLE", "현재 장바구니에 담을 수 없는 상품입니다."),
 
-    // Order
+    // 주문
     ORDER_CHECKOUT_CART_EMPTY(HttpStatus.BAD_REQUEST, "ORDER_CHECKOUT_CART_EMPTY", "체크아웃할 장바구니 항목이 없습니다."),
     ORDER_PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "ORDER_PRODUCT_UNAVAILABLE", "현재 주문할 수 없는 상품입니다."),
     ORDER_ITEM_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "ORDER_ITEM_QUANTITY_INVALID", "주문 수량은 1개 이상이어야 합니다."),
@@ -43,7 +43,7 @@ public enum ErrorCode {
     ORDER_SELLER_ORDERS_REQUIRED(HttpStatus.BAD_REQUEST, "ORDER_SELLER_ORDERS_REQUIRED", "주문에는 판매자 주문이 1개 이상 있어야 합니다."),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "주문을 찾을 수 없습니다."),
 
-    // Common
+    // 공통
     COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_INTERNAL_ERROR", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
 
     private final HttpStatus status;
