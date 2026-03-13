@@ -2,6 +2,8 @@ package com.fromvillage.product.presentation;
 
 import com.fromvillage.product.domain.Product;
 import com.fromvillage.product.domain.ProductCategory;
+import com.fromvillage.order.infrastructure.CheckoutOrderJpaRepository;
+import com.fromvillage.order.infrastructure.SellerOrderJpaRepository;
 import com.fromvillage.support.TestContainersConfig;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.infrastructure.UserJpaRepository;
@@ -45,9 +47,17 @@ class ProductPublicQueryIntegrationTest {
     @Autowired
     private CartJpaRepository cartJpaRepository;
 
+    @Autowired
+    private SellerOrderJpaRepository sellerOrderJpaRepository;
+
+    @Autowired
+    private CheckoutOrderJpaRepository checkoutOrderJpaRepository;
+
     @BeforeEach
     void setUp() {
         cartJpaRepository.deleteAll();
+        sellerOrderJpaRepository.deleteAll();
+        checkoutOrderJpaRepository.deleteAll();
         productJpaRepository.deleteAll();
         userJpaRepository.deleteAll();
     }

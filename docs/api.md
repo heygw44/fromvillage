@@ -486,7 +486,7 @@
 
 - 상품 삭제는 hard delete가 아니라 soft delete로 처리한다.
 - soft delete된 상품은 공개 상품 목록/상세에서 제외된다.
-- 장바구니 담기, 바로 구매, 체크아웃 제외 규칙은 후속 주문/장바구니 이슈에서 같은 계약으로 닫는다.
+- soft delete된 상품은 장바구니 담기, 바로 구매, 체크아웃 대상에서도 제외된다.
 - 기존 주문 이력 조회를 위해 상품 레코드는 DB에 유지한다.
 - soft delete된 상품은 다시 삭제할 수 없으며 `404 Not Found`로 응답한다.
 - 타인 소유 상품 삭제 요청은 `403 Forbidden`과 `AUTH_FORBIDDEN`으로 응답한다.
@@ -887,7 +887,43 @@ null
 - `SELLER`
 - 본인 상품이 포함된 `seller_order`만 조회한다.
 - `page`, `size`, `sort` 지원
+- `sort`는 `createdAt,desc`, `createdAt,asc`만 허용한다.
+- `sort`를 생략하면 기본 정렬은 `createdAt,desc`다.
+- 여러 `sort` 파라미터를 함께 보내면 `400 Bad Request`와 `VALIDATION_ERROR`로 거절한다.
 - 구매자 정보는 닉네임만 포함한다.
+- 응답 식별자는 `sellerOrderId`를 사용하고, 상위 고객 주문 식별자 `orderNumber`를 함께 반환한다.
+
+성공 응답 데이터 예시:
+
+```json
+{
+  "content": [
+    {
+      "sellerOrderId": 15,
+      "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
+      "buyerNickname": "구매자",
+      "status": "COMPLETED",
+      "totalAmount": 24000,
+      "discountAmount": 0,
+      "finalAmount": 24000,
+      "completedAt": "2026-03-14T10:00:00",
+      "canceledAt": null,
+      "createdAt": "2026-03-14T10:00:00"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1,
+  "hasNext": false
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`USER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 허용되지 않은 정렬 키 또는 복수 정렬 파라미터는 `400 Bad Request` + `VALIDATION_ERROR`
 
 ### 8.7 내 판매자 주문 상세 조회
 
@@ -895,6 +931,40 @@ null
 - `SELLER`
 - 본인 상품이 포함된 `seller_order`만 조회한다.
 - 구매자 정보는 닉네임만 포함하며, 이메일/전화번호/주소는 제외한다.
+- `sellerOrderId`는 SELLER 보호 API에서만 사용하는 내부 식별자다.
+- 응답에는 주문 당시 스냅샷 기준 `orderItems`를 함께 포함한다.
+
+성공 응답 데이터 예시:
+
+```json
+{
+  "sellerOrderId": 15,
+  "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
+  "buyerNickname": "구매자",
+  "status": "COMPLETED",
+  "totalAmount": 24000,
+  "discountAmount": 0,
+  "finalAmount": 24000,
+  "completedAt": "2026-03-14T10:00:00",
+  "canceledAt": null,
+  "createdAt": "2026-03-14T10:00:00",
+  "orderItems": [
+    {
+      "productNameSnapshot": "감자",
+      "productPriceSnapshot": 12000,
+      "quantity": 2,
+      "lineAmount": 24000
+    }
+  ]
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`USER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 타인 판매자 주문 상세 조회는 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 존재하지 않는 판매자 주문은 `404 Not Found` + `ORDER_NOT_FOUND`
 
 ## 9. 쿠폰 API
 

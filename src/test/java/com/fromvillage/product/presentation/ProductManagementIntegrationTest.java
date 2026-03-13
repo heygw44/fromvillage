@@ -3,6 +3,8 @@ package com.fromvillage.product.presentation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fromvillage.cart.infrastructure.CartJpaRepository;
+import com.fromvillage.order.infrastructure.CheckoutOrderJpaRepository;
+import com.fromvillage.order.infrastructure.SellerOrderJpaRepository;
 import com.fromvillage.product.domain.Product;
 import com.fromvillage.product.domain.ProductCategory;
 import com.fromvillage.support.TestContainersConfig;
@@ -64,6 +66,12 @@ class ProductManagementIntegrationTest {
         private CartJpaRepository cartRepository;
 
         @Autowired
+        private SellerOrderJpaRepository sellerOrderRepository;
+
+        @Autowired
+        private CheckoutOrderJpaRepository checkoutOrderRepository;
+
+        @Autowired
         private PasswordEncoder passwordEncoder;
 
         @Autowired
@@ -72,6 +80,8 @@ class ProductManagementIntegrationTest {
         @BeforeEach
         void setUp() {
                 cartRepository.deleteAll();
+                sellerOrderRepository.deleteAll();
+                checkoutOrderRepository.deleteAll();
                 productRepository.deleteAll();
                 userRepository.deleteAll();
                 clock.reset(Instant.parse("2026-03-10T00:00:00Z"));
