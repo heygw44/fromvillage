@@ -3,7 +3,7 @@ package com.fromvillage.order.domain;
 import java.time.LocalDateTime;
 
 public record CheckoutOrderSummaryView(
-        Long orderId,
+        String orderNumber,
         OrderStatus status,
         Long sellerOrderCount,
         Long totalAmount,

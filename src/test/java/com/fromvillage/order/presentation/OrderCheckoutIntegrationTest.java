@@ -139,7 +139,8 @@ class OrderCheckoutIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.orderId").isNumber())
+                .andExpect(jsonPath("$.data.orderNumber").isString())
+                .andExpect(jsonPath("$.data.orderId").doesNotExist())
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.sellerOrderCount").value(2))
                 .andExpect(jsonPath("$.data.totalAmount").value(107000))
@@ -147,11 +148,8 @@ class OrderCheckoutIntegrationTest {
                 .andExpect(jsonPath("$.data.finalAmount").value(107000))
                 .andReturn();
 
-        JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
-        Long orderId = response.get("data").get("orderId").asLong();
-
-        CheckoutOrder checkoutOrder = checkoutOrderRepository.findByIdWithSellerOrders(orderId).orElseThrow();
-        List<SellerOrder> sellerOrders = sellerOrderRepository.findAllByCheckoutOrderIdWithItems(orderId);
+        CheckoutOrder checkoutOrder = checkoutOrderRepository.findAll().getFirst();
+        List<SellerOrder> sellerOrders = sellerOrderRepository.findAllByCheckoutOrderIdWithItems(checkoutOrder.getId());
 
         assertThat(checkoutOrderRepository.count()).isEqualTo(1);
         assertThat(checkoutOrder.getUser().getId()).isEqualTo(buyer.getId());
@@ -244,7 +242,8 @@ class OrderCheckoutIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.orderId").isNumber())
+                .andExpect(jsonPath("$.data.orderNumber").isString())
+                .andExpect(jsonPath("$.data.orderId").doesNotExist())
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.sellerOrderCount").value(1))
                 .andExpect(jsonPath("$.data.totalAmount").value(44000))
@@ -252,11 +251,8 @@ class OrderCheckoutIntegrationTest {
                 .andExpect(jsonPath("$.data.finalAmount").value(44000))
                 .andReturn();
 
-        JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
-        Long orderId = response.get("data").get("orderId").asLong();
-
-        CheckoutOrder checkoutOrder = checkoutOrderRepository.findByIdWithSellerOrders(orderId).orElseThrow();
-        List<SellerOrder> sellerOrders = sellerOrderRepository.findAllByCheckoutOrderIdWithItems(orderId);
+        CheckoutOrder checkoutOrder = checkoutOrderRepository.findAll().getFirst();
+        List<SellerOrder> sellerOrders = sellerOrderRepository.findAllByCheckoutOrderIdWithItems(checkoutOrder.getId());
 
         assertThat(checkoutOrderRepository.count()).isEqualTo(1);
         assertThat(checkoutOrder.getUser().getId()).isEqualTo(buyer.getId());

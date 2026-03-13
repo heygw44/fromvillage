@@ -189,13 +189,14 @@ Redis는 동시성 제어의 전면, DB는 최종 기준 데이터 저장소 역
 
 장바구니에는 여러 판매자 상품을 담을 수 있지만, 체크아웃 시 고객 관점의 `checkout_order`를 먼저 생성한 뒤 내부적으로 판매자별 주문으로 분리한다.
 현재 MVP는 결제 연동 없이 체크아웃 성공 시 주문을 즉시 `COMPLETED` 상태로 완료 처리한다.
+고객용 주문 API는 내부 bigint PK 대신 불변 공개 식별자 `orderNumber`를 사용하고, 공개 응답에서는 하위 `seller_order`와 `order_item`의 내부 PK를 숨긴다.
 
 - 사용자 관점
   한 번의 체크아웃 = 하나의 주문
 - 시스템 관점
   하나의 `checkout_order` 아래에 여러 개의 `seller_order` 생성
 - 데이터 관점
-  `checkout_order`와 `seller_order`를 분리해 표현
+  `checkout_order`와 `seller_order`를 분리해 표현하고, 외부에는 `checkout_order.orderNumber`만 공개한다
 
 장바구니 체크아웃이 성공하면 해당 체크아웃에 포함된 `cart_item`만 삭제한다.
 바로 구매는 장바구니를 거치지 않는 별도 진입점이지만, 내부 주문 생성 규칙은 동일하게 적용한다.

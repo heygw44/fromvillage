@@ -44,21 +44,21 @@ public class OrderController {
         return ApiResponse.success(OrderSummaryPageResponse.from(page));
     }
 
-    @GetMapping("/{orderId}")
+    @GetMapping("/{orderNumber}")
     public ApiResponse<OrderDetailResponse> getOrder(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @PathVariable Long orderId
+            @PathVariable String orderNumber
     ) {
-        OrderDetail detail = orderQueryService.getOrder(authenticatedUser.getUserId(), orderId);
+        OrderDetail detail = orderQueryService.getOrder(authenticatedUser.getUserId(), orderNumber);
         return ApiResponse.success(OrderDetailResponse.from(detail));
     }
 
-    @PostMapping("/{orderId}/cancel")
+    @PostMapping("/{orderNumber}/cancel")
     public ApiResponse<OrderSummaryResponse> cancelOrder(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @PathVariable Long orderId
+            @PathVariable String orderNumber
     ) {
-        OrderSummary summary = orderCancelService.cancel(authenticatedUser.getUserId(), orderId);
+        OrderSummary summary = orderCancelService.cancel(authenticatedUser.getUserId(), orderNumber);
         return ApiResponse.success(OrderSummaryResponse.from(summary));
     }
 

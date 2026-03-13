@@ -6,7 +6,7 @@ import com.fromvillage.order.domain.OrderStatus;
 import java.time.LocalDateTime;
 
 public record OrderCheckoutResult(
-        Long orderId,
+        String orderNumber,
         OrderStatus status,
         Integer sellerOrderCount,
         Long totalAmount,
@@ -17,7 +17,7 @@ public record OrderCheckoutResult(
 
     public static OrderCheckoutResult from(CheckoutOrder checkoutOrder) {
         return new OrderCheckoutResult(
-                checkoutOrder.getId(),
+                checkoutOrder.getOrderNumber(),
                 checkoutOrder.getStatus(),
                 checkoutOrder.getSellerOrders().size(),
                 checkoutOrder.getTotalAmount(),

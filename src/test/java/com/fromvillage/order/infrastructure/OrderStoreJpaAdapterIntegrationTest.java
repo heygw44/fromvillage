@@ -81,10 +81,11 @@ class OrderStoreJpaAdapterIntegrationTest {
         CheckoutOrder saved = checkoutOrderStore.save(checkoutOrder);
 
         assertThat(saved.getId()).isNotNull();
+        assertThat(saved.getOrderNumber()).matches("^ORD-[0-9A-F]{32}$");
         assertThat(saved.getCreatedAt()).isNotNull();
         assertThat(saved.getUpdatedAt()).isNotNull();
 
-        CheckoutOrder found = checkoutOrderQueryPort.findDetailById(saved.getId()).orElseThrow();
+        CheckoutOrder found = checkoutOrderQueryPort.findDetailByOrderNumber(saved.getOrderNumber()).orElseThrow();
 
         assertThat(found.getSellerOrders()).hasSize(2);
         assertThat(found.getTotalAmount()).isEqualTo(32000L);
@@ -244,11 +245,11 @@ class OrderStoreJpaAdapterIntegrationTest {
         );
 
         assertThat(descResult.content())
-                .extracting(CheckoutOrderSummaryView::orderId)
-                .containsExactly(secondOrder.getId(), firstOrder.getId());
+                .extracting(CheckoutOrderSummaryView::orderNumber)
+                .containsExactly(secondOrder.getOrderNumber(), firstOrder.getOrderNumber());
         assertThat(ascResult.content())
-                .extracting(CheckoutOrderSummaryView::orderId)
-                .containsExactly(firstOrder.getId(), secondOrder.getId());
+                .extracting(CheckoutOrderSummaryView::orderNumber)
+                .containsExactly(firstOrder.getOrderNumber(), secondOrder.getOrderNumber());
     }
 
     private User createUser(String email, String nickname) {

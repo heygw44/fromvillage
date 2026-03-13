@@ -7,7 +7,7 @@ import com.fromvillage.order.domain.OrderStatus;
 import java.time.LocalDateTime;
 
 public record OrderSummary(
-        Long orderId,
+        String orderNumber,
         OrderStatus status,
         Integer sellerOrderCount,
         Long totalAmount,
@@ -20,7 +20,7 @@ public record OrderSummary(
 
     public static OrderSummary from(CheckoutOrder checkoutOrder) {
         return new OrderSummary(
-                checkoutOrder.getId(),
+                checkoutOrder.getOrderNumber(),
                 checkoutOrder.getStatus(),
                 checkoutOrder.getSellerOrders().size(),
                 checkoutOrder.getTotalAmount(),
@@ -34,7 +34,7 @@ public record OrderSummary(
 
     public static OrderSummary from(CheckoutOrderSummaryView summaryView) {
         return new OrderSummary(
-                summaryView.orderId(),
+                summaryView.orderNumber(),
                 summaryView.status(),
                 Math.toIntExact(summaryView.sellerOrderCount()),
                 summaryView.totalAmount(),

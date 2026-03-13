@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record OrderDetail(
-        Long orderId,
+        String orderNumber,
         OrderStatus status,
         Long totalAmount,
         Long discountAmount,
@@ -23,7 +23,7 @@ public record OrderDetail(
 
     public static OrderDetail from(CheckoutOrder checkoutOrder) {
         return new OrderDetail(
-                checkoutOrder.getId(),
+                checkoutOrder.getOrderNumber(),
                 checkoutOrder.getStatus(),
                 checkoutOrder.getTotalAmount(),
                 checkoutOrder.getDiscountAmount(),
@@ -38,8 +38,6 @@ public record OrderDetail(
     }
 
     public record SellerOrderDetail(
-            Long sellerOrderId,
-            Long sellerId,
             String sellerNickname,
             OrderStatus status,
             Long totalAmount,
@@ -51,8 +49,6 @@ public record OrderDetail(
     ) {
         public static SellerOrderDetail from(SellerOrder sellerOrder) {
             return new SellerOrderDetail(
-                    sellerOrder.getId(),
-                    sellerOrder.getSeller().getId(),
                     sellerOrder.getSeller().getNickname(),
                     sellerOrder.getStatus(),
                     sellerOrder.getTotalAmount(),
@@ -68,8 +64,6 @@ public record OrderDetail(
     }
 
     public record OrderItemDetail(
-            Long orderItemId,
-            Long productId,
             String productNameSnapshot,
             Long productPriceSnapshot,
             Integer quantity,
@@ -77,8 +71,6 @@ public record OrderDetail(
     ) {
         public static OrderItemDetail from(OrderItem orderItem) {
             return new OrderItemDetail(
-                    orderItem.getId(),
-                    orderItem.getProduct().getId(),
                     orderItem.getProductNameSnapshot(),
                     orderItem.getProductPriceSnapshot(),
                     orderItem.getQuantity(),

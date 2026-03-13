@@ -5,7 +5,7 @@ import com.fromvillage.order.application.OrderCheckoutResult;
 import java.time.LocalDateTime;
 
 public record OrderCheckoutResponse(
-        Long orderId,
+        String orderNumber,
         String status,
         Integer sellerOrderCount,
         Long totalAmount,
@@ -16,7 +16,7 @@ public record OrderCheckoutResponse(
 
     public static OrderCheckoutResponse from(OrderCheckoutResult result) {
         return new OrderCheckoutResponse(
-                result.orderId(),
+                result.orderNumber(),
                 result.status().name(),
                 result.sellerOrderCount(),
                 result.totalAmount(),

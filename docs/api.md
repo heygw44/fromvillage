@@ -676,7 +676,7 @@ null
 
 ```json
 {
-  "orderId": 1,
+  "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
   "status": "COMPLETED",
   "sellerOrderCount": 2,
   "totalAmount": 107000,
@@ -721,7 +721,7 @@ null
 
 ```json
 {
-  "orderId": 2,
+  "orderNumber": "ORD-77CC2BE247A84AADB13EC1B2AFC3C4A1",
   "status": "COMPLETED",
   "sellerOrderCount": 1,
   "totalAmount": 44000,
@@ -756,7 +756,7 @@ null
 {
   "content": [
     {
-      "orderId": 2,
+      "orderNumber": "ORD-77CC2BE247A84AADB13EC1B2AFC3C4A1",
       "status": "COMPLETED",
       "sellerOrderCount": 1,
       "totalAmount": 45000,
@@ -767,7 +767,7 @@ null
       "createdAt": "2026-03-13T11:00:00"
     },
     {
-      "orderId": 1,
+      "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
       "status": "COMPLETED",
       "sellerOrderCount": 2,
       "totalAmount": 32000,
@@ -794,16 +794,17 @@ null
 
 ### 8.4 내 주문 상세 조회
 
-- `GET /api/v1/orders/{orderId}`
+- `GET /api/v1/orders/{orderNumber}`
 - 고객 관점 `checkout_order` 상세를 조회한다.
 - 본인 주문 `USER`
 - 하위 `seller_order`와 `order_item` 스냅샷을 함께 반환한다.
+- 고객용 상세 응답에서는 `seller_order`, `order_item`, `product`, `seller`의 내부 PK를 노출하지 않는다.
 
 성공 응답 데이터 예시:
 
 ```json
 {
-  "orderId": 1,
+  "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
   "status": "COMPLETED",
   "totalAmount": 32000,
   "discountAmount": 0,
@@ -813,8 +814,6 @@ null
   "createdAt": "2026-03-13T10:00:00",
   "sellerOrders": [
     {
-      "sellerOrderId": 11,
-      "sellerId": 3,
       "sellerNickname": "판매자1",
       "status": "COMPLETED",
       "totalAmount": 24000,
@@ -824,8 +823,6 @@ null
       "canceledAt": null,
       "orderItems": [
         {
-          "orderItemId": 101,
-          "productId": 5,
           "productNameSnapshot": "감자",
           "productPriceSnapshot": 12000,
           "quantity": 2,
@@ -846,7 +843,7 @@ null
 
 ### 8.5 주문 취소
 
-- `POST /api/v1/orders/{orderId}/cancel`
+- `POST /api/v1/orders/{orderNumber}/cancel`
 - 고객 관점 `checkout_order`를 기준으로 취소한다.
 - 본인 주문 `USER`
 - CSRF 토큰 필요
@@ -859,7 +856,7 @@ null
 
 ```json
 {
-  "orderId": 1,
+  "orderNumber": "ORD-4F0B2A0C8D014FF4A6E6F90F2CCAA1B2",
   "status": "CANCELED",
   "sellerOrderCount": 2,
   "totalAmount": 32000,
