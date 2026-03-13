@@ -1,10 +1,10 @@
 package com.fromvillage.order.application;
 
-import com.fromvillage.cart.domain.CartItem;
-import com.fromvillage.cart.domain.CartStore;
 import com.fromvillage.common.exception.BusinessException;
 import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.order.domain.CheckoutOrder;
+import com.fromvillage.product.domain.Product;
+import com.fromvillage.product.domain.ProductStore;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.domain.UserStore;
 import lombok.RequiredArgsConstructor;
@@ -16,35 +16,24 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class OrderCheckoutService {
+public class OrderDirectCheckoutService {
 
     private final UserStore userStore;
-    private final CartStore cartStore;
+    private final ProductStore productStore;
     private final OrderPlacementService orderPlacementService;
 
     @PreAuthorize("hasRole('USER')")
     @Transactional
-    public OrderCheckoutResult checkout(Long userId) {
+    public OrderCheckoutResult directCheckout(Long userId, OrderDirectCheckoutCommand command) {
         User user = userStore.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        Product product = productStore.findById(command.productId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        List<CartItem> cartItems = cartStore.findAllForCheckoutByUserId(user.getId());
-        validateCartItems(cartItems);
-
-        CheckoutOrder savedCheckoutOrder = orderPlacementService.place(
+        CheckoutOrder checkoutOrder = orderPlacementService.place(
                 user,
-                cartItems.stream()
-                        .map(OrderCheckoutLine::fromCartItem)
-                        .toList()
+                List.of(OrderCheckoutLine.of(product, command.quantity()))
         );
-        cartStore.deleteAll(cartItems);
-
-        return OrderCheckoutResult.from(savedCheckoutOrder);
-    }
-
-    private void validateCartItems(List<CartItem> cartItems) {
-        if (cartItems.isEmpty()) {
-            throw new BusinessException(ErrorCode.ORDER_CHECKOUT_CART_EMPTY);
-        }
+        return OrderCheckoutResult.from(checkoutOrder);
     }
 }
