@@ -1,5 +1,7 @@
 package com.fromvillage.order.application;
 
+import com.fromvillage.common.exception.BusinessException;
+import com.fromvillage.common.exception.ErrorCode;
 import com.fromvillage.order.domain.CheckoutOrder;
 import com.fromvillage.order.domain.CheckoutOrderStore;
 import com.fromvillage.product.domain.Product;
@@ -21,7 +23,10 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class OrderPlacementServiceTest {
@@ -108,6 +113,72 @@ class OrderPlacementServiceTest {
         assertThat(result.getStatus().name()).isEqualTo("COMPLETED");
         assertThat(mackerel.getStockQuantity()).isEqualTo(0);
         assertThat(mackerel.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
+    }
+
+    @Test
+    @DisplayName("주문 라인이 비어 있으면 ORDER_ITEMS_REQUIRED 예외가 발생한다")
+    void placeRejectsEmptyOrderLines() {
+        User buyer = user(100L, "buyer@example.com", "구매자");
+
+        assertThatThrownBy(() -> orderPlacementService.place(buyer, List.of()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ORDER_ITEMS_REQUIRED);
+
+        verify(checkoutOrderStore, never()).save(org.mockito.ArgumentMatchers.any(CheckoutOrder.class));
+    }
+
+    @Test
+    @DisplayName("판매 불가 상품이 포함되면 ORDER_PRODUCT_UNAVAILABLE 예외가 발생한다")
+    void placeRejectsUnavailableProduct() {
+        User buyer = user(100L, "buyer@example.com", "구매자");
+        User seller = seller(1L, "seller@example.com", "판매자");
+        Product cabbage = Product.create(
+                seller,
+                "절임배추 10kg",
+                "전남 해남 절임배추",
+                ProductCategory.AGRICULTURE,
+                18000L,
+                3,
+                "https://cdn.example.com/cabbage.jpg"
+        );
+        cabbage.decreaseStock(3);
+
+        assertThatThrownBy(() -> orderPlacementService.place(
+                buyer,
+                List.of(OrderCheckoutLine.of(cabbage, 1))
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ORDER_PRODUCT_UNAVAILABLE);
+
+        verify(checkoutOrderStore, never()).save(org.mockito.ArgumentMatchers.any(CheckoutOrder.class));
+    }
+
+    @Test
+    @DisplayName("재고가 부족하면 PRODUCT_STOCK_INSUFFICIENT 예외가 발생한다")
+    void placeRejectsInsufficientStock() {
+        User buyer = user(100L, "buyer@example.com", "구매자");
+        User seller = seller(1L, "seller@example.com", "판매자");
+        Product potato = Product.create(
+                seller,
+                "유기농 감자 5kg",
+                "해남 햇감자",
+                ProductCategory.AGRICULTURE,
+                22000L,
+                2,
+                "https://cdn.example.com/potato.jpg"
+        );
+
+        assertThatThrownBy(() -> orderPlacementService.place(
+                buyer,
+                List.of(OrderCheckoutLine.of(potato, 3))
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.PRODUCT_STOCK_INSUFFICIENT);
+
+        verify(checkoutOrderStore, never()).save(org.mockito.ArgumentMatchers.any(CheckoutOrder.class));
     }
 
     private User user(Long id, String email, String nickname) {
