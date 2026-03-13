@@ -743,14 +743,106 @@ null
 ### 8.3 내 주문 목록 조회
 
 - `GET /api/v1/orders`
-- 인증 필요
+- `USER`
 - `page`, `size`, `sort` 지원
+- `sort`는 `createdAt,desc`, `createdAt,asc`만 허용한다.
+- `sort`를 생략하면 기본 정렬은 `createdAt,desc`다.
+- 여러 `sort` 파라미터를 함께 보내면 `400 Bad Request`와 `VALIDATION_ERROR`로 거절한다.
+- 응답은 고객 관점 `checkout_order` 요약 목록을 반환한다.
+
+성공 응답 데이터 예시:
+
+```json
+{
+  "content": [
+    {
+      "orderId": 2,
+      "status": "COMPLETED",
+      "sellerOrderCount": 1,
+      "totalAmount": 45000,
+      "discountAmount": 0,
+      "finalAmount": 45000,
+      "completedAt": "2026-03-13T11:00:00",
+      "canceledAt": null,
+      "createdAt": "2026-03-13T11:00:00"
+    },
+    {
+      "orderId": 1,
+      "status": "COMPLETED",
+      "sellerOrderCount": 2,
+      "totalAmount": 32000,
+      "discountAmount": 0,
+      "finalAmount": 32000,
+      "completedAt": "2026-03-13T10:00:00",
+      "canceledAt": null,
+      "createdAt": "2026-03-13T10:00:00"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1,
+  "hasNext": false
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 허용되지 않은 정렬 키 또는 복수 정렬 파라미터는 `400 Bad Request` + `VALIDATION_ERROR`
 
 ### 8.4 내 주문 상세 조회
 
 - `GET /api/v1/orders/{orderId}`
 - 고객 관점 `checkout_order` 상세를 조회한다.
-- 본인 주문 `USER`, 전체 조회 `ADMIN`
+- 본인 주문 `USER`
+- 하위 `seller_order`와 `order_item` 스냅샷을 함께 반환한다.
+
+성공 응답 데이터 예시:
+
+```json
+{
+  "orderId": 1,
+  "status": "COMPLETED",
+  "totalAmount": 32000,
+  "discountAmount": 0,
+  "finalAmount": 32000,
+  "completedAt": "2026-03-13T10:00:00",
+  "canceledAt": null,
+  "createdAt": "2026-03-13T10:00:00",
+  "sellerOrders": [
+    {
+      "sellerOrderId": 11,
+      "sellerId": 3,
+      "sellerNickname": "판매자1",
+      "status": "COMPLETED",
+      "totalAmount": 24000,
+      "discountAmount": 0,
+      "finalAmount": 24000,
+      "completedAt": "2026-03-13T10:00:00",
+      "canceledAt": null,
+      "orderItems": [
+        {
+          "orderItemId": 101,
+          "productId": 5,
+          "productNameSnapshot": "감자",
+          "productPriceSnapshot": 12000,
+          "quantity": 2,
+          "lineAmount": 24000
+        }
+      ]
+    }
+  ]
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 타인 주문 상세 조회는 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 존재하지 않는 주문은 `404 Not Found` + `ORDER_NOT_FOUND`
 
 ### 8.5 주문 취소
 
@@ -760,6 +852,33 @@ null
 - CSRF 토큰 필요
 - `COMPLETED` 상태 주문만 취소할 수 있다.
 - 취소 시 하위의 모든 `seller_order`도 함께 `CANCELED` 처리된다.
+- 취소 시 각 `order_item.quantity`만큼 상품 재고를 복구한다.
+- 재고 복구 결과 1 이상이면 상품 상태는 같은 트랜잭션 안에서 `ON_SALE`로 복구된다.
+
+성공 응답 데이터 예시:
+
+```json
+{
+  "orderId": 1,
+  "status": "CANCELED",
+  "sellerOrderCount": 2,
+  "totalAmount": 32000,
+  "discountAmount": 0,
+  "finalAmount": 32000,
+  "completedAt": "2026-03-13T10:00:00",
+  "canceledAt": "2026-03-13T12:00:00",
+  "createdAt": "2026-03-13T10:00:00"
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- CSRF 토큰 누락 또는 오류는 `403 Forbidden` + `AUTH_CSRF_INVALID`
+- 타인 주문 취소는 `403 Forbidden` + `AUTH_FORBIDDEN`
+- 존재하지 않는 주문은 `404 Not Found` + `ORDER_NOT_FOUND`
+- `CREATED`, `CANCELED` 상태 주문 취소는 `409 Conflict` + `ORDER_STATUS_TRANSITION_INVALID`
 
 ### 8.6 내 판매자 주문 목록 조회
 
