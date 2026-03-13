@@ -41,6 +41,7 @@ public enum ErrorCode {
     ORDER_PRODUCT_SELLER_MISMATCH(HttpStatus.BAD_REQUEST, "ORDER_PRODUCT_SELLER_MISMATCH", "판매자 주문에는 해당 판매자의 상품만 포함할 수 있습니다."),
     ORDER_STATUS_TRANSITION_INVALID(HttpStatus.CONFLICT, "ORDER_STATUS_TRANSITION_INVALID", "변경할 수 없는 주문 상태입니다."),
     ORDER_SELLER_ORDERS_REQUIRED(HttpStatus.BAD_REQUEST, "ORDER_SELLER_ORDERS_REQUIRED", "주문에는 판매자 주문이 1개 이상 있어야 합니다."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "주문을 찾을 수 없습니다."),
 
     // Common
     COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_INTERNAL_ERROR", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
