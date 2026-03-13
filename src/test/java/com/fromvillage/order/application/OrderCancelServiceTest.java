@@ -29,6 +29,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class OrderCancelServiceTest {
@@ -68,6 +70,7 @@ class OrderCancelServiceTest {
                 LocalDateTime.of(2026, 3, 13, 10, 0)
         );
 
+        given(checkoutOrderQueryPort.findOwnerIdById(200L)).willReturn(Optional.of(100L));
         given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
 
         OrderSummary result = orderCancelService.cancel(100L, 200L);
@@ -108,23 +111,27 @@ class OrderCancelServiceTest {
                 LocalDateTime.of(2026, 3, 13, 10, 0)
         );
 
-        given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
+        given(checkoutOrderQueryPort.findOwnerIdById(200L)).willReturn(Optional.of(101L));
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 200L))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.AUTH_FORBIDDEN);
+
+        verify(checkoutOrderQueryPort, never()).findDetailById(200L);
     }
 
     @Test
     @DisplayName("존재하지 않는 주문은 취소할 수 없다")
     void cancelRejectsMissingOrder() {
-        given(checkoutOrderQueryPort.findDetailById(999L)).willReturn(Optional.empty());
+        given(checkoutOrderQueryPort.findOwnerIdById(999L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 999L))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ORDER_NOT_FOUND);
+
+        verify(checkoutOrderQueryPort, never()).findDetailById(999L);
     }
 
     @Test
@@ -143,6 +150,7 @@ class OrderCancelServiceTest {
         );
         ReflectionTestUtils.setField(checkoutOrder, "id", 200L);
 
+        given(checkoutOrderQueryPort.findOwnerIdById(200L)).willReturn(Optional.of(100L));
         given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 200L))
@@ -171,6 +179,7 @@ class OrderCancelServiceTest {
         );
         checkoutOrder.cancel(LocalDateTime.of(2026, 3, 13, 11, 0));
 
+        given(checkoutOrderQueryPort.findOwnerIdById(200L)).willReturn(Optional.of(100L));
         given(checkoutOrderQueryPort.findDetailById(200L)).willReturn(Optional.of(checkoutOrder));
 
         assertThatThrownBy(() -> orderCancelService.cancel(100L, 200L))

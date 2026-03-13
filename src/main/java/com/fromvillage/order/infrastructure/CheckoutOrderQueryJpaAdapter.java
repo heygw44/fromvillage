@@ -40,6 +40,11 @@ public class CheckoutOrderQueryJpaAdapter implements CheckoutOrderQueryPort {
     }
 
     @Override
+    public Optional<Long> findOwnerIdById(Long orderId) {
+        return checkoutOrderJpaRepository.findOwnerIdById(orderId);
+    }
+
+    @Override
     public Optional<CheckoutOrder> findDetailById(Long orderId) {
         return checkoutOrderJpaRepository.findByIdWithSellerOrders(orderId)
                 .map(this::loadOrderItemsInPersistenceContext);

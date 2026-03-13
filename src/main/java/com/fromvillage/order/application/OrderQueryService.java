@@ -44,13 +44,9 @@ public class OrderQueryService {
     @PreAuthorize("hasRole('USER')")
     @Transactional(readOnly = true)
     public OrderDetail getOrder(Long userId, Long orderId) {
+        validateOwnership(userId, orderId);
         CheckoutOrder checkoutOrder = checkoutOrderQueryPort.findDetailById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-
-        if (!Objects.equals(checkoutOrder.getUser().getId(), userId)) {
-            throw new BusinessException(ErrorCode.AUTH_FORBIDDEN);
-        }
-
         return OrderDetail.from(checkoutOrder);
     }
 
@@ -80,5 +76,14 @@ public class OrderQueryService {
         }
 
         return order.isAscending() ? OrderQuerySort.CREATED_AT_ASC : OrderQuerySort.CREATED_AT_DESC;
+    }
+
+    private void validateOwnership(Long userId, Long orderId) {
+        Long ownerId = checkoutOrderQueryPort.findOwnerIdById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!Objects.equals(ownerId, userId)) {
+            throw new BusinessException(ErrorCode.AUTH_FORBIDDEN);
+        }
     }
 }

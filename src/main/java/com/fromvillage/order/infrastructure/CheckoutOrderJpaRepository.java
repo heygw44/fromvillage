@@ -46,6 +46,13 @@ public interface CheckoutOrderJpaRepository extends JpaRepository<CheckoutOrder,
     Page<CheckoutOrderSummaryView> findOrderSummariesByUserId(Long userId, Pageable pageable);
 
     @Query("""
+            select checkoutOrder.user.id
+            from CheckoutOrder checkoutOrder
+            where checkoutOrder.id = :checkoutOrderId
+            """)
+    Optional<Long> findOwnerIdById(Long checkoutOrderId);
+
+    @Query("""
             select distinct checkoutOrder
             from CheckoutOrder checkoutOrder
             left join fetch checkoutOrder.sellerOrders sellerOrder

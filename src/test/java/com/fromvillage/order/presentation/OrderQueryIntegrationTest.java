@@ -455,17 +455,23 @@ class OrderQueryIntegrationTest {
 
         Product potato = productRepository.saveAndFlush(createProduct(seller1, "감자", 12000L));
         Product mackerel = productRepository.saveAndFlush(createProduct(seller2, "고등어", 15000L));
+        Product shrimp = productRepository.saveAndFlush(createProduct(seller2, "새우", 7000L, 1));
 
         potato.decreaseStock(1);
         mackerel.decreaseStock(1);
+        shrimp.decreaseStock(1);
         productRepository.saveAndFlush(potato);
         productRepository.saveAndFlush(mackerel);
+        productRepository.saveAndFlush(shrimp);
 
         CheckoutOrder order = createCompletedOrder(
                 buyer,
                 List.of(
                         SellerOrder.create(seller1, List.of(OrderItem.create(potato, 1))),
-                        SellerOrder.create(seller2, List.of(OrderItem.create(mackerel, 1)))
+                        SellerOrder.create(seller2, List.of(
+                                OrderItem.create(mackerel, 1),
+                                OrderItem.create(shrimp, 1)
+                        ))
                 ),
                 LocalDateTime.of(2026, 3, 13, 11, 0)
         );
@@ -496,11 +502,14 @@ class OrderQueryIntegrationTest {
 
         Product restoredPotato = productRepository.findById(potato.getId()).orElseThrow();
         Product restoredMackerel = productRepository.findById(mackerel.getId()).orElseThrow();
+        Product restoredShrimp = productRepository.findById(shrimp.getId()).orElseThrow();
 
         assertThat(restoredPotato.getStockQuantity()).isEqualTo(10);
         assertThat(restoredPotato.getStatus().name()).isEqualTo("ON_SALE");
         assertThat(restoredMackerel.getStockQuantity()).isEqualTo(10);
         assertThat(restoredMackerel.getStatus().name()).isEqualTo("ON_SALE");
+        assertThat(restoredShrimp.getStockQuantity()).isEqualTo(1);
+        assertThat(restoredShrimp.getStatus().name()).isEqualTo("ON_SALE");
     }
 
     @Test
@@ -719,13 +728,17 @@ class OrderQueryIntegrationTest {
     }
 
     private Product createProduct(User seller, String name, Long price) {
+        return createProduct(seller, name, price, 10);
+    }
+
+    private Product createProduct(User seller, String name, Long price, int stockQuantity) {
         return Product.create(
                 seller,
                 name,
                 name + " 상품 설명",
                 ProductCategory.AGRICULTURE,
                 price,
-                10,
+                stockQuantity,
                 "https://cdn.example.com/" + name + ".jpg"
         );
     }

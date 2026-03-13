@@ -24,12 +24,9 @@ public class OrderCancelService {
     @PreAuthorize("hasRole('USER')")
     @Transactional
     public OrderSummary cancel(Long userId, Long orderId) {
+        validateOwnership(userId, orderId);
         CheckoutOrder checkoutOrder = checkoutOrderQueryPort.findDetailById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-
-        if (!Objects.equals(checkoutOrder.getUser().getId(), userId)) {
-            throw new BusinessException(ErrorCode.AUTH_FORBIDDEN);
-        }
 
         checkoutOrder.cancel(LocalDateTime.now(clock));
         restoreStocks(checkoutOrder);
@@ -45,5 +42,14 @@ public class OrderCancelService {
 
     private void restoreStock(OrderItem orderItem) {
         orderItem.getProduct().restoreStock(orderItem.getQuantity());
+    }
+
+    private void validateOwnership(Long userId, Long orderId) {
+        Long ownerId = checkoutOrderQueryPort.findOwnerIdById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!Objects.equals(ownerId, userId)) {
+            throw new BusinessException(ErrorCode.AUTH_FORBIDDEN);
+        }
     }
 }
