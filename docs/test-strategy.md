@@ -88,11 +88,15 @@
 - 체크아웃 시점에 soft delete 또는 판매 불가 상품이 포함되면 `409 + ORDER_PRODUCT_UNAVAILABLE`로 전체 실패하는지 검증
 - 체크아웃 시점에 재고가 부족하면 `409 + PRODUCT_STOCK_INSUFFICIENT`로 전체 실패하는지 검증
 - 빈 장바구니 체크아웃이 `400 + ORDER_CHECKOUT_CART_EMPTY`로 거절되는지 검증
+- SELLER 주문 목록 조회가 본인 판매자 주문만 반환하고 기본 정렬(`createdAt,desc`)과 허용된 대체 정렬(`createdAt,asc`)을 따르는지 검증
+- SELLER 주문 목록 조회가 허용되지 않은 정렬 키와 복수 정렬 파라미터를 `400 + VALIDATION_ERROR`로 거절하는지 검증
+- SELLER 주문 상세 조회가 `buyerNickname`과 `order_item` 스냅샷만 노출하고 구매자 민감 정보는 제외하는지 검증
+- SELLER 주문 조회에서 타인 판매자 주문, `USER`/`ADMIN`/미인증 접근을 각각 차단하는지 검증
 - 상품 `imageUrl`의 `https` 검증 및 서버 비-fetch 정책 검증
 - 공개 상품 목록 조회의 `keyword`, `category`, `sort`, 페이지네이션 계약 검증
 - 공개 상품 목록 조회의 `size` 상한 검증
 - soft delete된 상품이 공개 조회에서 제외되는지 검증
-- soft delete된 상품의 신규 주문 흐름 제외는 후속 장바구니/주문 이슈에서 같은 계약으로 검증
+- soft delete된 상품이 장바구니 담기, 체크아웃, 바로 구매에서 제외되는지 검증
 - soft delete된 상품 상세 조회가 `404 Not Found`로 응답하는지 검증
 - SELLER 상품 등록/수정/삭제 API의 성공 계약 검증
 - SELLER 본인 상품 목록 조회가 soft delete 상품을 포함하고 `deletedAt`을 노출하는지 검증
@@ -170,6 +174,7 @@
 - 통합: 장바구니 체크아웃 API의 성공/실패/보안 계약을 검증
 - 통합: 바로 구매 API의 성공/실패/보안 계약과 장바구니 비변경 규칙을 검증
 - 통합: 내 주문 목록/상세 API의 본인 범위, 역할 제한, 응답 필드 계약을 검증
+- 통합: SELLER 주문 목록/상세 API의 본인 범위, 정렬, 민감 정보 비노출 계약을 검증
 - 통합: 주문 취소 API의 상태 전이, 하위 판매자 주문 cascade 취소, 재고 복구, 보안 계약을 검증
 - 통합: 바로 구매 쿠폰 적용 규칙은 후속 쿠폰 이슈에서 검증
 
