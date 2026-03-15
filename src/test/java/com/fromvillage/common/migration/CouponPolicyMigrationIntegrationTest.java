@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
 class CouponPolicyMigrationIntegrationTest {
@@ -142,6 +143,33 @@ class CouponPolicyMigrationIntegrationTest {
                 .contains("total_quantity >= 1");
         assertThat(normalizeClause(findCheckClause("coupon_policy", "ck_coupon_policy_issued_quantity")))
                 .contains("issued_quantity >= 0");
+    }
+
+    @Test
+    @DisplayName("coupon_policy check 제약을 위반하면 저장에 실패한다")
+    void rejectsCouponPolicyCheckConstraintViolations() throws SQLException {
+        migrate();
+
+        execute("""
+                INSERT INTO users (email, password, nickname, role, seller_approved_at, created_at, updated_at)
+                VALUES ('admin@test.com', 'pw', '운영자', 'ADMIN', NULL, NOW(6), NOW(6))
+                """);
+
+        assertThatThrownBy(() -> execute("""
+                INSERT INTO coupon_policy
+                (name, discount_amount, minimum_order_amount, total_quantity, issued_quantity,
+                 started_at, ended_at, status, created_by, created_at, updated_at)
+                VALUES ('잘못된 할인 금액', 0, 0, 10, 0, NOW(6), DATE_ADD(NOW(6), INTERVAL 1 DAY), 'READY', 1, NOW(6), NOW(6))
+                """))
+                .isInstanceOf(SQLException.class);
+
+        assertThatThrownBy(() -> execute("""
+                INSERT INTO coupon_policy
+                (name, discount_amount, minimum_order_amount, total_quantity, issued_quantity,
+                 started_at, ended_at, status, created_by, created_at, updated_at)
+                VALUES ('잘못된 총 수량', 1000, 0, 0, 0, NOW(6), DATE_ADD(NOW(6), INTERVAL 1 DAY), 'READY', 1, NOW(6), NOW(6))
+                """))
+                .isInstanceOf(SQLException.class);
     }
 
     private void migrate() {
