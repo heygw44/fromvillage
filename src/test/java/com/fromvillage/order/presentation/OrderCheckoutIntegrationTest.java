@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fromvillage.cart.domain.CartItem;
 import com.fromvillage.cart.infrastructure.CartJpaRepository;
+import com.fromvillage.coupon.infrastructure.CouponPolicyJpaRepository;
+import com.fromvillage.coupon.infrastructure.IssuedCouponJpaRepository;
 import com.fromvillage.order.domain.CheckoutOrder;
 import com.fromvillage.order.domain.OrderStatus;
 import com.fromvillage.order.domain.SellerOrder;
@@ -68,6 +70,12 @@ class OrderCheckoutIntegrationTest {
     private SellerOrderJpaRepository sellerOrderRepository;
 
     @Autowired
+    private IssuedCouponJpaRepository issuedCouponRepository;
+
+    @Autowired
+    private CouponPolicyJpaRepository couponPolicyRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
@@ -75,6 +83,8 @@ class OrderCheckoutIntegrationTest {
         cartRepository.deleteAll();
         sellerOrderRepository.deleteAll();
         checkoutOrderRepository.deleteAll();
+        issuedCouponRepository.deleteAll();
+        couponPolicyRepository.deleteAll();
         productRepository.deleteAll();
         userRepository.deleteAll();
     }

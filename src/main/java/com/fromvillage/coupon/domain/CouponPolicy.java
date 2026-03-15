@@ -120,6 +120,34 @@ public class CouponPolicy extends BaseTimeEntity {
         this.status = CouponPolicyStatus.CLOSED;
     }
 
+    public void issue(LocalDateTime issuedAt) {
+        LocalDateTime issueTime = Objects.requireNonNull(issuedAt);
+
+        validateOpenStatus();
+        validateIssuePeriodActive(issueTime);
+        validateRemainingQuantity();
+
+        this.issuedQuantity += 1;
+    }
+
+    private void validateOpenStatus() {
+        if (this.status != CouponPolicyStatus.OPEN) {
+            throw new BusinessException(ErrorCode.COUPON_POLICY_NOT_OPEN);
+        }
+    }
+
+    private void validateIssuePeriodActive(LocalDateTime issuedAt) {
+        if (issuedAt.isBefore(startedAt) || issuedAt.isAfter(endedAt)) {
+            throw new BusinessException(ErrorCode.COUPON_POLICY_ISSUE_PERIOD_NOT_ACTIVE);
+        }
+    }
+
+    private void validateRemainingQuantity() {
+        if (issuedQuantity >= totalQuantity) {
+            throw new BusinessException(ErrorCode.COUPON_POLICY_QUANTITY_EXHAUSTED);
+        }
+    }
+
     private static void validateDiscountAmount(Long discountAmount) {
         Objects.requireNonNull(discountAmount);
 
