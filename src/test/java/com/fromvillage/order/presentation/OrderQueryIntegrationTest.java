@@ -1,6 +1,8 @@
 package com.fromvillage.order.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fromvillage.coupon.infrastructure.CouponPolicyJpaRepository;
+import com.fromvillage.coupon.infrastructure.IssuedCouponJpaRepository;
 import com.fromvillage.order.domain.CheckoutOrder;
 import com.fromvillage.order.domain.OrderItem;
 import com.fromvillage.order.domain.SellerOrder;
@@ -65,10 +67,18 @@ class OrderQueryIntegrationTest {
     @Autowired
     private SellerOrderJpaRepository sellerOrderRepository;
 
+    @Autowired
+    private IssuedCouponJpaRepository issuedCouponRepository;
+
+    @Autowired
+    private CouponPolicyJpaRepository couponPolicyRepository;
+
     @BeforeEach
     void setUp() {
         sellerOrderRepository.deleteAll();
         checkoutOrderRepository.deleteAll();
+        issuedCouponRepository.deleteAll();
+        couponPolicyRepository.deleteAll();
         productRepository.deleteAll();
         userRepository.deleteAll();
     }

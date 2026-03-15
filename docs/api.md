@@ -978,12 +978,78 @@ null
 - `POST /api/v1/coupons/{couponPolicyId}/issue`
 - 인증 필요
 - CSRF 토큰 필요
+- 성공 시 `201 Created`
+
+응답 데이터 예시:
+
+```json
+{
+  "issuedCouponId": 1,
+  "couponPolicyId": 3,
+  "couponName": "봄맞이 할인",
+  "discountAmount": 3000,
+  "minimumOrderAmount": 20000,
+  "status": "ISSUED",
+  "issuedAt": "2026-03-15T10:00:00",
+  "startedAt": "2026-03-10T00:00:00",
+  "endedAt": "2026-03-31T23:59:00"
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
+- CSRF 토큰이 없거나 유효하지 않으면 `403 Forbidden` + `AUTH_CSRF_INVALID`
+- 존재하지 않는 쿠폰 정책은 `404 Not Found` + `COUPON_POLICY_NOT_FOUND`
+- 이미 발급받은 쿠폰이면 `409 Conflict` + `COUPON_ALREADY_ISSUED`
+- `OPEN` 상태가 아닌 쿠폰 정책은 `409 Conflict` + `COUPON_POLICY_NOT_OPEN`
+- 발급 기간이 아니면 `409 Conflict` + `COUPON_POLICY_ISSUE_PERIOD_NOT_ACTIVE`
+- 발급 수량이 모두 소진되면 `409 Conflict` + `COUPON_POLICY_QUANTITY_EXHAUSTED`
 
 ### 9.3 내 보유 쿠폰 조회
 
 - `GET /api/v1/coupons/me`
 - 인증 필요
 - 사용 중이 아닌 쿠폰만 주문에 적용 가능하다.
+- 이번 단계의 보유 조회는 `ISSUED` 상태 쿠폰만 반환한다.
+- 응답은 `issuedAt` 내림차순, 동률이면 `issuedCouponId` 내림차순으로 정렬한다.
+
+응답 데이터 예시:
+
+```json
+{
+  "coupons": [
+    {
+      "issuedCouponId": 2,
+      "couponPolicyId": 4,
+      "couponName": "주말 할인",
+      "discountAmount": 5000,
+      "minimumOrderAmount": 30000,
+      "status": "ISSUED",
+      "issuedAt": "2026-03-15T10:00:00",
+      "startedAt": "2026-03-10T00:00:00",
+      "endedAt": "2026-03-31T23:59:00"
+    },
+    {
+      "issuedCouponId": 1,
+      "couponPolicyId": 3,
+      "couponName": "봄맞이 할인",
+      "discountAmount": 3000,
+      "minimumOrderAmount": 20000,
+      "status": "ISSUED",
+      "issuedAt": "2026-03-15T09:00:00",
+      "startedAt": "2026-03-10T00:00:00",
+      "endedAt": "2026-03-31T23:59:00"
+    }
+  ]
+}
+```
+
+실패 응답 규칙:
+
+- 미인증 요청은 `401 Unauthorized` + `AUTH_UNAUTHORIZED`
+- 권한 부족 요청(`SELLER`, `ADMIN`)은 `403 Forbidden` + `AUTH_FORBIDDEN`
 
 ## 10. 관리자 API
 

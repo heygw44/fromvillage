@@ -15,3 +15,4 @@ public interface CouponPolicyJpaRepository extends JpaRepository<CouponPolicy, L
     @Query("select couponPolicy from CouponPolicy couponPolicy where couponPolicy.id = :couponPolicyId")
     Optional<CouponPolicy> findByIdForUpdate(@Param("couponPolicyId") Long couponPolicyId);
 }
+
