@@ -238,6 +238,102 @@ class AdminCouponPolicyIntegrationTest {
     }
 
     @Test
+    @DisplayName("미인증 요청은 쿠폰 정책 오픈에서 AUTH_UNAUTHORIZED를 반환한다")
+    void unauthenticatedOpenRequestIsRejected() throws Exception {
+        User admin = userRepository.saveAndFlush(createAdmin("admin@example.com", "운영자"));
+        CouponPolicy couponPolicy = couponPolicyRepository.saveAndFlush(createPolicy(admin));
+        var csrfSession = fetchCsrfSession();
+
+        mockMvc.perform(post("/api/v1/admin/coupon-policies/{couponPolicyId}/open", couponPolicy.getId())
+                        .cookie(csrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("USER는 쿠폰 정책 오픈 API에 접근할 수 없다")
+    void userCannotOpenCouponPolicy() throws Exception {
+        User admin = userRepository.saveAndFlush(createAdmin("admin@example.com", "운영자"));
+        userRepository.saveAndFlush(createUser("user@example.com", "일반회원"));
+        CouponPolicy couponPolicy = couponPolicyRepository.saveAndFlush(createPolicy(admin));
+
+        var userSession = login("user@example.com", "Password12!");
+        var csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/admin/coupon-policies/{couponPolicyId}/open", couponPolicy.getId())
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("쿠폰 정책 오픈 API는 CSRF 토큰이 없으면 거절된다")
+    void openCouponPolicyRequiresCsrf() throws Exception {
+        User admin = userRepository.saveAndFlush(createAdmin("admin@example.com", "운영자"));
+        CouponPolicy couponPolicy = couponPolicyRepository.saveAndFlush(createPolicy(admin));
+
+        var adminSession = login("admin@example.com", "Password12!");
+
+        mockMvc.perform(post("/api/v1/admin/coupon-policies/{couponPolicyId}/open", couponPolicy.getId())
+                        .cookie(adminSession)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_CSRF_INVALID"));
+    }
+
+    @Test
+    @DisplayName("미인증 요청은 쿠폰 정책 종료에서 AUTH_UNAUTHORIZED를 반환한다")
+    void unauthenticatedCloseRequestIsRejected() throws Exception {
+        User admin = userRepository.saveAndFlush(createAdmin("admin@example.com", "운영자"));
+        CouponPolicy couponPolicy = couponPolicyRepository.saveAndFlush(createPolicy(admin));
+        var csrfSession = fetchCsrfSession();
+
+        mockMvc.perform(post("/api/v1/admin/coupon-policies/{couponPolicyId}/close", couponPolicy.getId())
+                        .cookie(csrfSession.sessionCookie())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("USER는 쿠폰 정책 종료 API에 접근할 수 없다")
+    void userCannotCloseCouponPolicy() throws Exception {
+        User admin = userRepository.saveAndFlush(createAdmin("admin@example.com", "운영자"));
+        userRepository.saveAndFlush(createUser("user@example.com", "일반회원"));
+        CouponPolicy couponPolicy = couponPolicyRepository.saveAndFlush(createPolicy(admin));
+
+        var userSession = login("user@example.com", "Password12!");
+        var csrfSession = fetchCsrfSession(userSession);
+
+        mockMvc.perform(post("/api/v1/admin/coupon-policies/{couponPolicyId}/close", couponPolicy.getId())
+                        .cookie(userSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(csrfSession.headerName(), csrfSession.token()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("쿠폰 정책 종료 API는 CSRF 토큰이 없으면 거절된다")
+    void closeCouponPolicyRequiresCsrf() throws Exception {
+        User admin = userRepository.saveAndFlush(createAdmin("admin@example.com", "운영자"));
+        CouponPolicy couponPolicy = couponPolicyRepository.saveAndFlush(createPolicy(admin));
+
+        var adminSession = login("admin@example.com", "Password12!");
+
+        mockMvc.perform(post("/api/v1/admin/coupon-policies/{couponPolicyId}/close", couponPolicy.getId())
+                        .cookie(adminSession)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTH_CSRF_INVALID"));
+    }
+
+    @Test
     @DisplayName("할인 금액이 0 이하이면 요청 단계에서 거절된다")
     void createCouponPolicyRejectsNonPositiveDiscountAmount() throws Exception {
         userRepository.saveAndFlush(createAdmin("admin@example.com", "운영자"));

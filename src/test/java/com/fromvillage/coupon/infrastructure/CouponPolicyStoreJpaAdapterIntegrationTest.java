@@ -7,6 +7,7 @@ import com.fromvillage.coupon.domain.CouponPolicyStore;
 import com.fromvillage.support.TestContainersConfig;
 import com.fromvillage.user.domain.User;
 import com.fromvillage.user.infrastructure.UserJpaRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,9 @@ class CouponPolicyStoreJpaAdapterIntegrationTest {
 
     @Autowired
     private UserJpaRepository userJpaRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     @DisplayName("쿠폰 정책을 저장하면 생성자, 상태, 발급 수량, 기간 정보를 함께 보존한다")
@@ -86,6 +90,9 @@ class CouponPolicyStoreJpaAdapterIntegrationTest {
                 admin
         ));
 
+        entityManager.flush();
+        entityManager.clear();
+
         assertThat(couponPolicyStore.findById(saved.getId()))
                 .isPresent()
                 .get()
@@ -115,6 +122,9 @@ class CouponPolicyStoreJpaAdapterIntegrationTest {
                 LocalDateTime.of(2026, 3, 31, 23, 59),
                 admin
         ));
+
+        entityManager.flush();
+        entityManager.clear();
 
         CouponPolicy persisted = couponPolicyJpaRepository.findById(saved.getId()).orElseThrow();
 

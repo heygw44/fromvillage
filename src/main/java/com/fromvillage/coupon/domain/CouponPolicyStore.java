@@ -7,4 +7,6 @@ public interface CouponPolicyStore {
     CouponPolicy save(CouponPolicy couponPolicy);
 
     Optional<CouponPolicy> findById(Long couponPolicyId);
+
+    Optional<CouponPolicy> findByIdForUpdate(Long couponPolicyId);
 }

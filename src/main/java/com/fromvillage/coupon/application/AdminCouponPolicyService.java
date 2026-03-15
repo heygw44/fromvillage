@@ -41,7 +41,7 @@ public class AdminCouponPolicyService {
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public AdminCouponPolicyResult openCouponPolicy(Long couponPolicyId) {
-        CouponPolicy couponPolicy = couponPolicyStore.findById(couponPolicyId)
+        CouponPolicy couponPolicy = couponPolicyStore.findByIdForUpdate(couponPolicyId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_POLICY_NOT_FOUND));
 
         couponPolicy.open();
@@ -51,7 +51,7 @@ public class AdminCouponPolicyService {
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public AdminCouponPolicyResult closeCouponPolicy(Long couponPolicyId) {
-        CouponPolicy couponPolicy = couponPolicyStore.findById(couponPolicyId)
+        CouponPolicy couponPolicy = couponPolicyStore.findByIdForUpdate(couponPolicyId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_POLICY_NOT_FOUND));
 
         couponPolicy.close();

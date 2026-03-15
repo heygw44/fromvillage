@@ -103,11 +103,11 @@ class AdminCouponPolicyServiceTest {
         CouponPolicy couponPolicy = createPolicy();
         ReflectionTestUtils.setField(couponPolicy, "id", 10L);
 
-        given(couponPolicyStore.findById(10L)).willReturn(Optional.of(couponPolicy));
+        given(couponPolicyStore.findByIdForUpdate(10L)).willReturn(Optional.of(couponPolicy));
 
         AdminCouponPolicyResult result = adminCouponPolicyService.openCouponPolicy(10L);
 
-        verify(couponPolicyStore).findById(10L);
+        verify(couponPolicyStore).findByIdForUpdate(10L);
         verifyNoMoreInteractions(couponPolicyStore);
         assertThat(result.couponPolicyId()).isEqualTo(10L);
         assertThat(result.status()).isEqualTo(CouponPolicyStatus.OPEN);
@@ -119,11 +119,11 @@ class AdminCouponPolicyServiceTest {
         CouponPolicy couponPolicy = createPolicy();
         ReflectionTestUtils.setField(couponPolicy, "id", 10L);
 
-        given(couponPolicyStore.findById(10L)).willReturn(Optional.of(couponPolicy));
+        given(couponPolicyStore.findByIdForUpdate(10L)).willReturn(Optional.of(couponPolicy));
 
         AdminCouponPolicyResult result = adminCouponPolicyService.closeCouponPolicy(10L);
 
-        verify(couponPolicyStore).findById(10L);
+        verify(couponPolicyStore).findByIdForUpdate(10L);
         verifyNoMoreInteractions(couponPolicyStore);
         assertThat(result.couponPolicyId()).isEqualTo(10L);
         assertThat(result.status()).isEqualTo(CouponPolicyStatus.CLOSED);
@@ -136,11 +136,11 @@ class AdminCouponPolicyServiceTest {
         ReflectionTestUtils.setField(couponPolicy, "id", 10L);
         couponPolicy.open();
 
-        given(couponPolicyStore.findById(10L)).willReturn(Optional.of(couponPolicy));
+        given(couponPolicyStore.findByIdForUpdate(10L)).willReturn(Optional.of(couponPolicy));
 
         AdminCouponPolicyResult result = adminCouponPolicyService.closeCouponPolicy(10L);
 
-        verify(couponPolicyStore).findById(10L);
+        verify(couponPolicyStore).findByIdForUpdate(10L);
         verifyNoMoreInteractions(couponPolicyStore);
         assertThat(result.couponPolicyId()).isEqualTo(10L);
         assertThat(result.status()).isEqualTo(CouponPolicyStatus.CLOSED);
@@ -149,7 +149,7 @@ class AdminCouponPolicyServiceTest {
     @Test
     @DisplayName("존재하지 않는 쿠폰 정책을 오픈하면 COUPON_POLICY_NOT_FOUND 예외를 반환한다")
     void openCouponPolicyRejectsMissingPolicy() {
-        given(couponPolicyStore.findById(10L)).willReturn(Optional.empty());
+        given(couponPolicyStore.findByIdForUpdate(10L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> adminCouponPolicyService.openCouponPolicy(10L))
                 .isInstanceOf(BusinessException.class)
@@ -160,7 +160,7 @@ class AdminCouponPolicyServiceTest {
     @Test
     @DisplayName("존재하지 않는 쿠폰 정책을 종료하면 COUPON_POLICY_NOT_FOUND 예외를 반환한다")
     void closeCouponPolicyRejectsMissingPolicy() {
-        given(couponPolicyStore.findById(10L)).willReturn(Optional.empty());
+        given(couponPolicyStore.findByIdForUpdate(10L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> adminCouponPolicyService.closeCouponPolicy(10L))
                 .isInstanceOf(BusinessException.class)

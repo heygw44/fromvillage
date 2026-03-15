@@ -156,9 +156,11 @@ class CouponPolicyMigrationIntegrationTest {
     }
 
     private boolean tableExists(String tableName) throws SQLException {
-        DatabaseMetaData metaData = connection().getMetaData();
-        try (ResultSet resultSet = metaData.getTables(connection().getCatalog(), null, tableName, null)) {
-            return resultSet.next();
+        try (Connection connection = connection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            try (ResultSet resultSet = metaData.getTables(connection.getCatalog(), null, tableName, null)) {
+                return resultSet.next();
+            }
         }
     }
 
@@ -241,14 +243,19 @@ class CouponPolicyMigrationIntegrationTest {
     private String findCheckClause(String tableName, String constraintName) throws SQLException {
         String sql = """
                 SELECT check_clause
-                FROM information_schema.check_constraints
-                WHERE constraint_schema = DATABASE()
-                  AND constraint_name = ?
+                FROM information_schema.check_constraints check_constraints
+                join information_schema.table_constraints table_constraints
+                  on table_constraints.constraint_schema = check_constraints.constraint_schema
+                 and table_constraints.constraint_name = check_constraints.constraint_name
+                WHERE check_constraints.constraint_schema = DATABASE()
+                  AND table_constraints.table_name = ?
+                  AND check_constraints.constraint_name = ?
                 """;
 
         try (Connection connection = connection();
              var preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, constraintName);
+            preparedStatement.setString(1, tableName);
+            preparedStatement.setString(2, constraintName);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (!resultSet.next()) {
