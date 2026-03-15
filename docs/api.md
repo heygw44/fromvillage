@@ -1075,17 +1075,101 @@ null
 - `startedAt`
 - `endedAt`
 
+성공 응답 예시:
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "couponPolicyId": 1,
+    "name": "봄맞이 할인",
+    "discountAmount": 3000,
+    "minimumOrderAmount": 20000,
+    "totalQuantity": 100,
+    "issuedQuantity": 0,
+    "startedAt": "2026-03-20T00:00:00",
+    "endedAt": "2026-03-31T23:59:00",
+    "status": "READY"
+  }
+}
+```
+
+실패 조건:
+
+- 필수값 누락, `discountAmount <= 0`, `minimumOrderAmount < 0`, `totalQuantity <= 0`, `startedAt >= endedAt`는 `400 + VALIDATION_ERROR`
+- 미인증은 `401 + AUTH_UNAUTHORIZED`
+- ADMIN 이외 역할은 `403 + AUTH_FORBIDDEN`
+- CSRF 토큰 누락 또는 불일치는 `403 + AUTH_CSRF_INVALID`
+
 ### 10.4 쿠폰 정책 오픈
 
 - `POST /api/v1/admin/coupon-policies/{couponPolicyId}/open`
 - `ADMIN`
 - CSRF 토큰 필요
 
+성공 응답 예시:
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "couponPolicyId": 1,
+    "name": "봄맞이 할인",
+    "discountAmount": 3000,
+    "minimumOrderAmount": 20000,
+    "totalQuantity": 100,
+    "issuedQuantity": 0,
+    "startedAt": "2026-03-20T00:00:00",
+    "endedAt": "2026-03-31T23:59:00",
+    "status": "OPEN"
+  }
+}
+```
+
+실패 조건:
+
+- 존재하지 않는 정책은 `404 + COUPON_POLICY_NOT_FOUND`
+- 이미 `OPEN`이거나 `CLOSED`인 정책을 다시 오픈하면 `409 + COUPON_POLICY_STATUS_TRANSITION_INVALID`
+- 미인증/권한/CSRF 실패 경계는 정책 생성 API와 동일하다
+
 ### 10.5 쿠폰 정책 종료
 
 - `POST /api/v1/admin/coupon-policies/{couponPolicyId}/close`
 - `ADMIN`
 - CSRF 토큰 필요
+
+성공 응답 예시:
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "couponPolicyId": 1,
+    "name": "봄맞이 할인",
+    "discountAmount": 3000,
+    "minimumOrderAmount": 20000,
+    "totalQuantity": 100,
+    "issuedQuantity": 0,
+    "startedAt": "2026-03-20T00:00:00",
+    "endedAt": "2026-03-31T23:59:00",
+    "status": "CLOSED"
+  }
+}
+```
+
+실패 조건:
+
+- 존재하지 않는 정책은 `404 + COUPON_POLICY_NOT_FOUND`
+- 이미 `CLOSED`인 정책을 다시 종료하면 `409 + COUPON_POLICY_STATUS_TRANSITION_INVALID`
+- 아직 오픈하지 않은 정책도 운영 취소를 위해 `READY -> CLOSED` 종료를 허용한다.
+- 쿠폰 정책 종료는 soft delete가 아니라 `CLOSED` 상태 전이로 관리한다.
+- 미인증/권한/CSRF 실패 경계는 정책 생성 API와 동일하다
 
 ### 10.6 주문 목록 조회
 

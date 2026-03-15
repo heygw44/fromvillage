@@ -184,6 +184,7 @@ MVP에서는 remember-me 자동 로그인 기능은 포함하지 않는다.
 이 구조를 통해 빠른 동시성 제어와 영속 데이터 정합성을 함께 확보한다.
 Redis는 동시성 제어의 전면, DB는 최종 기준 데이터 저장소 역할을 맡는다.
 `coupon_policy.issued_quantity`의 최종 정합성 기준은 DB이며, Redis 카운터와 불일치가 발생하면 DB 기준으로 Redis를 보정한다.
+쿠폰 정책 자체는 상품과 달리 `deleted_at` soft delete를 두지 않고, 운영 lifecycle을 `READY`, `OPEN`, `CLOSED` 상태 전이로 관리한다.
 
 ## 9. 주문 아키텍처
 
