@@ -15,7 +15,7 @@ public class CouponPolicyStoreJpaAdapter implements CouponPolicyStore {
 
     @Override
     public CouponPolicy save(CouponPolicy couponPolicy) {
-        return couponPolicyJpaRepository.saveAndFlush(couponPolicy);
+        return couponPolicyJpaRepository.save(couponPolicy);
     }
 
     @Override

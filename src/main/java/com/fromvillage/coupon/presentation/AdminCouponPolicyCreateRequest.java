@@ -1,5 +1,6 @@
 package com.fromvillage.coupon.presentation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fromvillage.coupon.application.AdminCouponPolicyCreateCommand;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -46,6 +47,7 @@ public record AdminCouponPolicyCreateRequest(
     }
 
     @AssertTrue(message = "쿠폰 발급 기간을 다시 확인해 주세요.")
+    @JsonIgnore
     public boolean isIssuePeriodValid() {
         if (startedAt == null || endedAt == null) {
             return true;

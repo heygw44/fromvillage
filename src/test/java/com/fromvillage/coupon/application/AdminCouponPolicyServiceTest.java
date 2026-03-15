@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class AdminCouponPolicyServiceTest {
@@ -103,11 +104,11 @@ class AdminCouponPolicyServiceTest {
         ReflectionTestUtils.setField(couponPolicy, "id", 10L);
 
         given(couponPolicyStore.findById(10L)).willReturn(Optional.of(couponPolicy));
-        given(couponPolicyStore.save(any(CouponPolicy.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         AdminCouponPolicyResult result = adminCouponPolicyService.openCouponPolicy(10L);
 
-        verify(couponPolicyStore).save(couponPolicy);
+        verify(couponPolicyStore).findById(10L);
+        verifyNoMoreInteractions(couponPolicyStore);
         assertThat(result.couponPolicyId()).isEqualTo(10L);
         assertThat(result.status()).isEqualTo(CouponPolicyStatus.OPEN);
     }
@@ -119,11 +120,11 @@ class AdminCouponPolicyServiceTest {
         ReflectionTestUtils.setField(couponPolicy, "id", 10L);
 
         given(couponPolicyStore.findById(10L)).willReturn(Optional.of(couponPolicy));
-        given(couponPolicyStore.save(any(CouponPolicy.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         AdminCouponPolicyResult result = adminCouponPolicyService.closeCouponPolicy(10L);
 
-        verify(couponPolicyStore).save(couponPolicy);
+        verify(couponPolicyStore).findById(10L);
+        verifyNoMoreInteractions(couponPolicyStore);
         assertThat(result.couponPolicyId()).isEqualTo(10L);
         assertThat(result.status()).isEqualTo(CouponPolicyStatus.CLOSED);
     }
@@ -136,11 +137,11 @@ class AdminCouponPolicyServiceTest {
         couponPolicy.open();
 
         given(couponPolicyStore.findById(10L)).willReturn(Optional.of(couponPolicy));
-        given(couponPolicyStore.save(any(CouponPolicy.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         AdminCouponPolicyResult result = adminCouponPolicyService.closeCouponPolicy(10L);
 
-        verify(couponPolicyStore).save(couponPolicy);
+        verify(couponPolicyStore).findById(10L);
+        verifyNoMoreInteractions(couponPolicyStore);
         assertThat(result.couponPolicyId()).isEqualTo(10L);
         assertThat(result.status()).isEqualTo(CouponPolicyStatus.CLOSED);
     }

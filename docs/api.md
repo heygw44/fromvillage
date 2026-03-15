@@ -1167,6 +1167,8 @@ null
 
 - 존재하지 않는 정책은 `404 + COUPON_POLICY_NOT_FOUND`
 - 이미 `CLOSED`인 정책을 다시 종료하면 `409 + COUPON_POLICY_STATUS_TRANSITION_INVALID`
+- 아직 오픈하지 않은 정책도 운영 취소를 위해 `READY -> CLOSED` 종료를 허용한다.
+- 쿠폰 정책 종료는 soft delete가 아니라 `CLOSED` 상태 전이로 관리한다.
 - 미인증/권한/CSRF 실패 경계는 정책 생성 API와 동일하다
 
 ### 10.6 주문 목록 조회

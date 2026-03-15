@@ -45,8 +45,7 @@ public class AdminCouponPolicyService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_POLICY_NOT_FOUND));
 
         couponPolicy.open();
-        CouponPolicy savedCouponPolicy = couponPolicyStore.save(couponPolicy);
-        return AdminCouponPolicyResult.from(savedCouponPolicy);
+        return AdminCouponPolicyResult.from(couponPolicy);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -56,7 +55,6 @@ public class AdminCouponPolicyService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_POLICY_NOT_FOUND));
 
         couponPolicy.close();
-        CouponPolicy savedCouponPolicy = couponPolicyStore.save(couponPolicy);
-        return AdminCouponPolicyResult.from(savedCouponPolicy);
+        return AdminCouponPolicyResult.from(couponPolicy);
     }
 }
